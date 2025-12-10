@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  agent-games:
+    build: .
+    container_name: agent-games-design
+    volumes:
+      - .:/app
+      - ~/.cache/uv:/tmp/uv-cache
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-agent-games-design}
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["uv", "run", "agent-games", "--help"]
+
+  # Development service with hot reloading
+  dev:
+    build: .
+    container_name: agent-games-design-dev
+    volumes:
+      - .:/app
+      - ~/.cache/uv:/tmp/uv-cache
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-agent-games-design}
+      - DEBUG=true
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["bash"]
