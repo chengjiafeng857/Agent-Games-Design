@@ -1,6 +1,8 @@
 # Agent Games Design
 
-A LangGraph-based agent system for designing and implementing AI-powered game agents. This project provides a well-structured foundation for building complex agent workflows using LangGraph, LangChain, and modern Python development practices.
+A LangGraph-based agent system for designing and implementing AI-powered game agents. 
+WE can now generate high-quality texture asstes from a plain text GDD
+WE will also have a detailed implementation plan out of the GDD
 
 ## 🎯 Features
 
