@@ -1,0 +1,229 @@
+# ============================================================================
+# CHARACTER SPECIFICATION TEMPLATE
+# ============================================================================
+# 
+# Copy this file to create a new character spec:
+#   cp configs/_template.yaml configs/my_character.yaml
+#
+# Then run:
+#   uv run generate_prompts.py -i configs/my_character.yaml -o prompts -v v1
+#
+# Pipeline: TEXT SPEC → 2D PROMPTS → GEMINI T-POSE → 2D CHECKLIST → Hunyuan.3D
+# ============================================================================
+
+
+# ----------------------------------------------------------------------------
+# REQUIRED FIELD
+# ----------------------------------------------------------------------------
+
+# name (REQUIRED)
+# The character's name. Used in filenames and prompts.
+#
+# CRITERIA:
+#   ✓ Length: 1-3 words (single name or short title)
+#   ✓ Characters: alphanumeric, spaces, hyphens, periods only
+#   ✓ Avoid: special characters (!@#$%^&*), very long names
+#   ✓ Style: can be a name, title, or designation
+#
+# Examples: "Aethel", "Nova", "Dr. Chen", "Robot-7", "Captain Vex"
+name: "MyCharacter"
+
+
+# ----------------------------------------------------------------------------
+# OPTIONAL FIELDS (all have defaults if omitted)
+# ----------------------------------------------------------------------------
+
+# role
+# What the character does in the game world.
+# This appears in prompts like "a {role} rendered in..."
+#
+# CRITERIA:
+#   ✓ Length: 2-5 words (concise noun phrase)
+#   ✓ Format: [adjective(s)] + [occupation/type]
+#   ✓ Include: species/race if non-human, profession, specialty
+#   ✓ Avoid: full sentences, backstory, personality traits
+#   ✓ Specificity: specific > generic ("android archaeologist" > "robot")
+#
+# Good: "Android archaeologist", "Elven battle mage", "Cyberpunk street samurai"
+# Bad: "A brave warrior who fights for justice" (too long, includes personality)
+#
+# Examples:
+#   - "Android archaeologist"
+#   - "Space pirate captain"
+#   - "Medieval blacksmith"
+#   - "Cyberpunk hacker"
+#   - "Fantasy mage apprentice"
+role: ""
+
+# game_style
+# The visual art style for the character rendering.
+# This guides the AI's artistic interpretation.
+#
+# CRITERIA:
+#   ✓ Length: 2-6 words (style descriptors)
+#   ✓ Format: [genre/era] + [rendering style] + [optional: realism level]
+#   ✓ Include: art movement, game genre aesthetic, rendering approach
+#   ✓ Avoid: color descriptions (use color_palette), character details
+#   ✓ Consistency: should match your game's overall visual direction
+#
+# Good: "stylized sci-fi, slightly realistic", "hand-painted fantasy"
+# Bad: "blue and silver futuristic" (describes colors, not style)
+#
+# Examples:
+#   - "stylized sci-fi, slightly realistic"
+#   - "cel-shaded cartoon"
+#   - "dark fantasy, painterly"
+#   - "anime-inspired, colorful"
+#   - "realistic military"
+#   - "low-poly retro"
+game_style: ""
+
+# silhouette
+# Body shape and distinctive outline features.
+# CRITICAL for 3D modeling - determines recognizability at a glance.
+#
+# CRITERIA:
+#   ✓ Length: 3-8 words (comma-separated descriptors)
+#   ✓ Format: [body type], [distinctive feature 1], [distinctive feature 2]
+#   ✓ Include: height/build, prominent clothing shapes, unique body parts
+#   ✓ Test: would you recognize this shape as a solid black shadow?
+#   ✓ Avoid: colors, textures, small details (those won't show in silhouette)
+#   ✓ 3D-friendly: avoid overly complex shapes that are hard to model/rig
+#
+# Good: "tall, long coat, mechanical arm" (clear distinct shapes)
+# Bad: "has blue eyes and scars" (invisible in silhouette)
+#
+# Examples:
+#   - "tall, long coat, mechanical arm"
+#   - "short and stocky, bulky armor, large hammer"
+#   - "slim athletic build, flowing cape"
+#   - "hunched posture, oversized backpack"
+#   - "average height, distinctive hat, staff"
+silhouette: ""
+
+# color_palette
+# List of main colors for the character design.
+#
+# CRITERIA:
+#   ✓ Count: 2-5 colors (fewer = more cohesive design)
+#   ✓ Format: [color name] or [color name + usage/location]
+#   ✓ Include: primary color (60%), secondary color (30%), accent (10%)
+#   ✓ Specify: "accents", "trim", "highlights" for minor colors
+#   ✓ Avoid: too many colors (chaotic), all similar tones (no contrast)
+#   ✓ Consider: color harmony (complementary, analogous, triadic)
+#
+# Good: ["teal", "black", "orange accents"] (clear hierarchy, good contrast)
+# Bad: ["red", "orange", "yellow", "pink", "magenta"] (too many, no hierarchy)
+#
+# Examples:
+#   - ["teal", "black", "orange accents"]
+#   - ["deep purple", "gold trim", "white"]
+#   - ["earth tones", "rust red", "leather brown"]
+#   - ["neon pink", "black", "chrome silver"]
+color_palette:
+  - ""
+  # - ""
+  # - ""
+
+# key_props
+# Important items/accessories the character carries as equipment.
+# These define character identity and role at a glance.
+# NOTE: Props appear as equipment on body, NOT held in hands (T-pose requirement)
+#
+# CRITERIA:
+#   ✓ Count: 1-4 items (more = cluttered design)
+#   ✓ Format: [item] + [body location] (e.g., "sword on back", "tablet on hip")
+#   ✓ Include: items that define the role, signature weapons/tools
+#   ✓ Location: MUST specify where on body (hip, back, belt, arm-mounted, etc.)
+#   ✓ Avoid: items that would be held in hands (breaks T-pose)
+#   ✓ 3D-friendly: items should be attachable to body, not floating
+#   ✓ Visibility: items should be clearly visible, not hidden under clothing
+#
+# Good: "data tablet on left hip", "sword strapped to back"
+# Bad: "holding a sword" (breaks T-pose), "small ring" (not visible)
+#
+# Examples:
+#   - ["data tablet on left hip", "arm-mounted scanner"]
+#   - ["enchanted staff on back", "spell book on belt"]
+#   - ["plasma rifle on back", "tactical backpack"]
+#   - ["blacksmith hammer on belt loop", "leather apron"]
+key_props:
+  - ""
+
+# animation_focus
+# Types of animations planned for 3D rigging.
+# Ensures the design supports required character movements.
+# NOTE: This is for design consideration, not included in image prompts.
+#
+# CRITERIA:
+#   ✓ Count: 2-6 animation types (core movement set)
+#   ✓ Format: simple verb or verb phrase
+#   ✓ Include: locomotion (walk/run), idle, primary action, combat if applicable
+#   ✓ Consider: will clothing/props interfere with these movements?
+#   ✓ Avoid: overly complex animations for simple characters
+#   ✓ Priority: list most important animations first
+#
+# Design check: if character has flowing cape, can they still "run" without clipping?
+#
+# Good: ["walk", "idle", "attack", "cast spell"] (clear, achievable)
+# Bad: ["complex acrobatic flip sequence"] (too specific for this stage)
+#
+# Examples:
+#   - ["walk", "idle scanning", "simple attack"]
+#   - ["run", "jump", "combat stance", "casting spell"]
+#   - ["walk", "sit", "talk", "gesture"]
+#   - ["fly", "hover", "land", "attack"]
+animation_focus:
+  - ""
+  # - ""
+  # - ""
+
+# extra_notes
+# Additional context for prompt generation.
+# Free-form text appended to prompts for fine-tuning.
+#
+# CRITERIA:
+#   ✓ Length: 1-3 sentences (brief, focused)
+#   ✓ Format: comma-separated descriptors or short phrases
+#   ✓ Include any of:
+#       - Environment/setting context (helps AI understand aesthetic)
+#       - Expression/mood (neutral recommended for T-pose refs)
+#       - Specific design requirements ("practical gear", "battle-worn")
+#       - Things to AVOID ("no visible weapons", "no logos")
+#   ✓ Avoid: contradicting other fields, lengthy backstory
+#   ✓ T-pose note: recommend "neutral expression" for reference images
+#
+# Good: "Neon-lit cyber-ruin environment, neutral expression, practical gear."
+# Bad: "Born in a small village, Aethel grew up wanting to..." (backstory)
+#
+# Examples:
+#   - "Set in a neon-lit cyber-ruin environment, neutral expression, practical gear."
+#   - "Medieval European aesthetic, confident pose, battle-worn armor."
+#   - "Friendly appearance, approachable, no weapons visible."
+extra_notes: ""
+
+
+# ============================================================================
+# TIPS FOR GOOD CHARACTER SPECS
+# ============================================================================
+#
+# 1. BE SPECIFIC: "tall android with trench coat" > "robot character"
+#
+# 2. THINK 3D: Will this design work when converted to 3D?
+#    - Avoid overly complex details that won't translate
+#    - Consider how clothing/armor will deform during animation
+#
+# 3. COLOR WISELY: 2-4 colors usually work best
+#    - Too many colors look chaotic
+#    - Include one "accent" color for visual interest
+#
+# 4. PROPS MATTER: Items define character identity
+#    - A mage without a staff looks like anyone
+#    - Props should be clearly visible, not hidden
+#
+# 5. SILHOUETTE TEST: Would you recognize this character as a shadow?
+#    - Distinctive shapes help recognition
+#    - Avoid generic "human standing" shapes
+#
+# ============================================================================
+

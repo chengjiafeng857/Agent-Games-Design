@@ -1,0 +1,39 @@
+# =============================================================================
+# Git Ignore for Prompt Generation Tool
+# =============================================================================
+
+# Environment files (contain API keys - NEVER commit!)
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Output folders (generated content)
+output/
+
+# OS files
+.DS_Store
+Thumbs.db
+

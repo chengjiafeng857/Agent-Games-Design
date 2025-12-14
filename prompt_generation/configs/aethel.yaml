@@ -1,0 +1,20 @@
+# Character Specification: Aethel
+# This file defines a character for the AI prompt generation pipeline.
+# Pipeline: TEXT SPEC → 2D PROMPTS → GEMINI T-POSE PROMPTS → 2D CHECKLIST
+
+name: "Aethel"
+role: "Android archaeologist"
+game_style: "stylized sci-fi, slightly realistic"
+silhouette: "tall, long coat, mechanical arm"
+color_palette:
+  - "teal"
+  - "black"
+  - "orange accents"
+key_props:
+  - "data tablet on left hip"
+  - "arm-mounted scanner"
+animation_focus:
+  - "walk"
+  - "idle scanning"
+  - "simple attack"
+extra_notes: "Set in a neon-lit cyber-ruin environment, neutral expression, practical gear."

@@ -1,0 +1,20 @@
+name: Zylos
+role: Cybernetic ninja warrior
+game_style: stylized sci-fi, slightly realistic
+silhouette: slim build, masked head, mechanical legs
+color_palette:
+- black
+- neon green
+- silver
+- dark grey
+key_props:
+- throwing star holster on belt
+- katana sheath on back
+animation_focus:
+- idle
+- walk
+- run
+- attack
+- jump
+- stealth
+extra_notes: Set in a futuristic neon city environment, with an angry, intense expression.

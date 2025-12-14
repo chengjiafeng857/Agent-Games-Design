@@ -1,0 +1,28 @@
+#! Minimal character spec template (fill all fields)
+
+# name: short identifier used in filenames/prompts
+name: ""
+
+# role: what the character does in the game
+role: ""
+
+# game_style: target art style (e.g., "stylized sci-fi")
+game_style: ""
+
+# silhouette: overall body shape/outline cues
+silhouette: ""
+
+# color_palette: 2-5 main colors
+color_palette:
+  - ""
+
+# key_props: visible items/gear that define the character must specify on which body part it is located, e.g. "data tablet on left hip"
+key_props:
+  - ""
+
+# animation_focus: planned moves to support in rigging
+animation_focus:
+  - ""
+
+# extra_notes: extra context, constraints, or things to avoid
+extra_notes: ""
