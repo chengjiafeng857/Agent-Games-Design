@@ -1,20 +1,20 @@
 name: Corp Patrol
-role: Corporate security
-game_style: stylized sci-fi cel-shaded
-silhouette: armored figures with broad shoulders and visor helm
+role: Corporate security guard
+game_style: stylized sci-fi, cel-shaded
+silhouette: broad shoulders, armored vest, visor helmet
 color_palette:
 - dark blue
 - desaturated teal
-- gray
-- amber visor glow
+- white visor glow
 key_props:
-- holstered sidearm on hip
-- baton on opposite hip
-- utility pouches on belt
+- sidearm holster on hip
+- utility belt around waist
+- radio pack on back
 animation_focus:
 - patrol
-- aim
+- turn
 - pursue
+- aim
 - tackle
-- search
-extra_notes: Read clearly as threats with rigid posture and precise movements.
+extra_notes: Silhouette must remain highly readable against neon environments to telegraph
+  stealth threats.

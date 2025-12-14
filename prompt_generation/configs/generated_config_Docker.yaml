@@ -1,0 +1,18 @@
+name: Docker
+role: Harbor dock worker
+game_style: stylized cel-shaded
+silhouette: sturdy build, work vest, cap
+color_palette:
+- navy
+- gray
+- muted orange accents
+key_props:
+- tool belt on waist
+- radio clipped to chest harness
+animation_focus:
+- walk
+- idle
+- lift
+- gesture
+extra_notes: Often placed near cranes or cargo stacks, with a weary but steadfast
+  demeanor.

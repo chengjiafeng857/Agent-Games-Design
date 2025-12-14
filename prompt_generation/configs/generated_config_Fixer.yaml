@@ -1,0 +1,18 @@
+name: Fixer
+role: Neighborhood fixer
+game_style: stylized cel-shaded
+silhouette: lean figure, long coat, hood or high collar
+color_palette:
+- dark gray
+- teal trim
+- muted magenta accents
+key_props:
+- data slate on belt
+- keyring on hip
+animation_focus:
+- idle
+- talk
+- gesture
+- lean
+extra_notes: Typically positioned near kiosks or shadowy corners, with a calm, calculating
+  expression.

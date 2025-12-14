@@ -1,19 +1,18 @@
 name: Mei
 role: Street vendor contact
 game_style: stylized cel-shaded
-silhouette: medium build with apron and stall counter outline
+silhouette: short to average build, apron, stall canopy
 color_palette:
 - warm brown
-- amber accents
-- teal signage
+- amber lantern glow
+- teal signage accents
 key_props:
 - order tablet on belt
-- towel looped at waist
-- coin pouch on hip
+- towel tucked at waist
 animation_focus:
 - idle
-- talk
 - serve
-- wave
-- lean
-extra_notes: Serves as an early friendly anchor NPC at a lantern or noodle stall.
+- talk
+- gesture
+extra_notes: Runs a lantern or noodle stall, friendly and expressive, serving as Aya’s
+  early emotional anchor.

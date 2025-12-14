@@ -1,0 +1,19 @@
+name: Street Vendor
+role: Night-market merchant
+game_style: stylized cel-shaded
+silhouette: average build, apron, stall outline
+color_palette:
+- warm browns
+- teal signage accents
+- amber lantern glow
+key_props:
+- coin pouch on belt
+- towel looped at waist
+- order pad on hip
+animation_focus:
+- idle
+- talk
+- gesture
+- lean
+extra_notes: Usually stands beside or under a compact stall frame in a crowded night
+  market.
