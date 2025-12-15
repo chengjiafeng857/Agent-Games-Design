@@ -1,0 +1,18 @@
+name: Mira Chen
+role: lantern vendor
+game_style: stylized cel-shaded narrative
+silhouette: short rounded figure with layered robe and hanging lantern rig
+color_palette:
+- amber accents
+- warm neutrals
+- teal trim
+key_props:
+- lantern bundle rack on back
+- coin pouch on belt
+animation_focus:
+- idle
+- talk
+- gesture
+- handle goods
+extra_notes: Friendly elder vendor in the night market, framed by hanging lanterns
+  under awnings in the rain.

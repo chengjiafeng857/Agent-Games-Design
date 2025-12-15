@@ -53,16 +53,24 @@ class CharacterConfig(BaseModel):
     )
 
 
-def generate_config_from_text(text: str, model_name: Optional[str] = None) -> str:
+class CharacterList(BaseModel):
+    """Container for multiple character configurations."""
+    characters: List[CharacterConfig] = Field(description="List of characters identified in the text")
+
+
+def generate_config_from_text(text: str, model_name: Optional[str] = None) -> List[tuple[str, str]]:
     """
-    Generate a YAML configuration from a text description using an LLM.
+    Generate YAML configurations from a text description using an LLM.
+    Supports detecting multiple characters.
     
     Args:
-        text: The text description of the character (GDD).
+        text: The text description of the character(s) (GDD).
         model_name: The OpenAI model to use (defaults to settings.default_model).
         
     Returns:
-        A generic YAML string representing the character configuration.
+        A list of tuples, where each tuple contains:
+        - The character's sanitized name (for filename).
+        - The YAML string configuration.
     """
     if not settings.openai_api_key:
         raise ValueError("OPENAI_API_KEY is not set.")
@@ -76,11 +84,11 @@ def generate_config_from_text(text: str, model_name: Optional[str] = None) -> st
         api_key=settings.openai_api_key
     )
     
-    structured_llm = llm.with_structured_output(CharacterConfig)
+    structured_llm = llm.with_structured_output(CharacterList)
     
     prompt = (
-        "You are an expert Game Technical Artist. Extract a character specification from the input text "
-        "and format it EXACTLY according to the schema constraints.\n\n"
+        "You are an expert Game Technical Artist. Extract ALL character specifications from the input text "
+        "and format them EXACTLY according to the schema constraints.\n\n"
         "STRICT GUIDELINES:\n"
         "1. Name: 1-3 words only. No titles like 'Mr.' unless part of the name.\n"
         "2. Role: Noun phrase only (e.g., 'Cybernetic Ninja'), NO full sentences.\n"
@@ -88,18 +96,28 @@ def generate_config_from_text(text: str, model_name: Optional[str] = None) -> st
         "4. Silhouette: Focus on SHAPE. No colors or inner details.\n"
         "5. Key Props: MUST include body location (e.g., 'on back', 'on belt'). Items must be attached, NOT held.\n"
         "6. Animation Focus: Simple verbs (e.g., 'run', 'attack').\n"
-        "7. Inference: If details are missing, infer them based on the character's role and style.\n\n"
+        "7. Inference: If details are missing, infer them based on the character's role and style.\n"
+        "8. MULTIPLE CHARACTERS: If the text describes multiple distinct characters (e.g. a protagonist and a sidekick), extract ALL of them.\n\n"
         f"Input Text:\n{text}"
     )
     
     try:
-        config: CharacterConfig = structured_llm.invoke(prompt)
+        result: CharacterList = structured_llm.invoke(prompt)
         
-        # Convert to dictionary and exclude None values for cleaner YAML
-        config_dict = config.model_dump(exclude_none=True)
-        
-        # Convert to YAML
-        return yaml.dump(config_dict, sort_keys=False, allow_unicode=True)
+        configs = []
+        for char_config in result.characters:
+            # Convert to dictionary and exclude None values
+            config_dict = char_config.model_dump(exclude_none=True)
+            
+            # Generate YAML
+            yaml_str = yaml.dump(config_dict, sort_keys=False, allow_unicode=True)
+            
+            # Sanitize name for filename use
+            safe_name = "".join(c for c in char_config.name if c.isalnum() or c in (' ', '-', '_')).strip().replace(' ', '_')
+            
+            configs.append((safe_name, yaml_str))
+            
+        return configs
         
     except Exception as e:
         logger.error(f"Error generating config: {e}")

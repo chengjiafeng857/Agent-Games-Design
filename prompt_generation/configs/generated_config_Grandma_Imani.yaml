@@ -1,0 +1,18 @@
+name: Grandma Imani
+role: tea and remedies seller
+game_style: stylized cel-shaded narrative
+silhouette: small stooped figure with shawl and apron
+color_palette:
+- warm browns
+- amber highlights
+- muted teal details
+key_props:
+- herb satchel on belt
+- small medicine case on hip
+animation_focus:
+- idle
+- talk
+- pour
+- gesture
+extra_notes: Acts as a cozy safehouse-like presence, often near steaming kettles contrasting
+  with the cold rain outside.

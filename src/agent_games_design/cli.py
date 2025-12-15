@@ -61,7 +61,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     # ReAct workflow command
     react_parser = subparsers.add_parser("react", help="Run ReAct game design workflow")
-    react_parser.add_argument("prompt", help="Game design request prompt")
+    react_parser.add_argument("prompt", nargs="?", help="Game design request prompt (optional if --file is used)")
+    react_parser.add_argument("--file", "-f", help="Read game design request from file")
     react_parser.add_argument("--interactive", action="store_true", help="Run in interactive mode")
     react_parser.add_argument("--evaluate", action="store_true", help="Enable LangSmith evaluation")
     react_parser.add_argument("--eval-only", action="store_true", help="Run evaluation example only")
@@ -69,7 +70,7 @@ def create_parser() -> argparse.ArgumentParser:
     # Generate Config command
     gen_config_parser = subparsers.add_parser("generate-config", aliases=["gen-config"], help="Generate config from GDD file")
     gen_config_parser.add_argument("input_file", help="Path to the textual Game Design Document (GDD)")
-    gen_config_parser.add_argument("--output", "-o", default="generated_config.yaml", help="Output YAML file path")
+    gen_config_parser.add_argument("--output", "-o", default="prompt_generation/configs/generated_config.yaml", help="Output YAML file path (default: prompt_generation/configs/generated_config.yaml)")
     gen_config_parser.add_argument(
         "--model", default=None, help=f"Model to use (default: {settings.default_model})"
     )
@@ -310,7 +311,7 @@ def run_react_workflow(prompt: str, interactive: bool = False, evaluate: bool = 
         return
 
     print("🎮 Starting ReAct Game Design Workflow...")
-    print(f"📝 Request: {prompt}")
+    print(f"📝 Request: {prompt[:100]}..." if len(prompt) > 100 else f"📝 Request: {prompt}")
 
     if interactive:
         print("\n🔄 Interactive mode - you'll be asked to approve the plan")
@@ -463,7 +464,25 @@ def main() -> None:
             if args.eval_only:
                 run_evaluation_example()
             else:
-                run_react_workflow(args.prompt, args.interactive, args.evaluate)
+                prompt = args.prompt
+                if args.file:
+                    file_path = Path(args.file)
+                    if not file_path.exists():
+                        print(f"❌ Error: Input file not found: {args.file}")
+                        sys.exit(1)
+                    print(f"📄 Reading prompt from file: {args.file}")
+                    try:
+                        prompt = file_path.read_text(encoding="utf-8")
+                    except Exception as e:
+                        print(f"❌ Error reading file: {e}")
+                        sys.exit(1)
+                
+                if not prompt:
+                    print("❌ Error: You must provide a prompt or an input file.")
+                    parser.parse_args(["react", "--help"])
+                    sys.exit(1)
+
+                run_react_workflow(prompt, args.interactive, args.evaluate)
         elif args.command == "generate-config":
             run_generate_config(
                 args.input_file,
@@ -499,14 +518,37 @@ def run_generate_config(input_file: str, output_file: str, model: Optional[str] 
         text = input_path.read_text(encoding="utf-8")
         
         print("🤖 Generating configuration with AI...")
-        yaml_config = generate_config_from_text(text, model)
+        generated_configs = generate_config_from_text(text, model)
         
+        if not generated_configs:
+            print("⚠️ No characters found in text.")
+            return
+
+        # Ensure output directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(yaml_config, encoding="utf-8")
+
+        if len(generated_configs) == 1:
+            # Single character - use the exact output path specified
+            _, yaml_config = generated_configs[0]
+            output_path.write_text(yaml_config, encoding="utf-8")
+            print(f"✅ Config generated successfully!")
+            print(f"💾 Saved to: {output_file}")
         
-        print(f"✅ Config generated successfully!")
-        print(f"💾 Saved to: {output_file}")
-        
+        else:
+            # Multiple characters - append name to filename
+            print(f"✅ Found {len(generated_configs)} characters!")
+            base_stem = output_path.stem
+            ext = output_path.suffix or ".yaml"
+            parent_dir = output_path.parent
+            
+            for char_name, yaml_config in generated_configs:
+                # Create sanitized filename: base_name_CharName.yaml
+                new_filename = f"{base_stem}_{char_name}{ext}"
+                new_path = parent_dir / new_filename
+                
+                new_path.write_text(yaml_config, encoding="utf-8")
+                print(f"💾 Saved: {new_path}")
+                
     except Exception as e:
         print(f"❌ Error generating config: {e}")
 

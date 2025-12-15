@@ -1,0 +1,18 @@
+name: Switch
+role: neighborhood fixer
+game_style: stylized cel-shaded narrative
+silhouette: relaxed stance with short jacket and headset profile
+color_palette:
+- dark neutrals
+- teal accent lines
+- magenta UI glow
+key_props:
+- job terminal wristband on arm
+- data pouch on belt
+animation_focus:
+- idle
+- talk
+- tap device
+- gesture
+extra_notes: Aya’s main job-board contact, usually near a glowing kiosk surrounded
+  by holographic UI elements.

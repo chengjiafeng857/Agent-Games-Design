@@ -1,0 +1,22 @@
+name: Aya
+role: Neon courier
+game_style: stylized cel-shaded
+silhouette: slim, hooded coat, messenger bag strap
+color_palette:
+- teal
+- magenta
+- amber accents
+- dark grey
+key_props:
+- parcel satchel on right hip
+- compact toolkit pouch on belt
+- small battery pack on lower back
+animation_focus:
+- run
+- ride
+- jump
+- slide
+- sneak
+- deliver
+extra_notes: Set in a rain-soaked neon harbor city, usually with a focused but empathetic
+  expression during deliveries.

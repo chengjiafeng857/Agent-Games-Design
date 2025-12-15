@@ -1,0 +1,20 @@
+name: Corp Patrol
+role: corporate security guard
+game_style: stylized cel-shaded sci-fi
+silhouette: average build with armored jacket and visor helmet
+color_palette:
+- dark blue uniform
+- cool grey armor
+- teal accents
+key_props:
+- baton holster on belt
+- utility pouch on left hip
+- radio unit on back
+animation_focus:
+- walk
+- patrol turn
+- scan
+- pursue
+- signal
+extra_notes: Acts as a side-view stealth threat in neon rain-soaked alleys, often
+  in duos with readable detection cones.

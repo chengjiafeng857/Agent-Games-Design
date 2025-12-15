@@ -90,8 +90,8 @@ uv run agent-games --help
 # interactive chat
 uv run agent-games chat
 
-# ReAct Game Design Workflow
-uv run agent-games react "Create a mobile puzzle game with physics mechanics"
+# Run ReAct workflow with a prompt file (Recommended for long GDDs)
+uv run agent-games react --file my_game_idea.txt
 ```
 
 ### Running Examples
@@ -147,7 +147,10 @@ The project includes a sophisticated **ReAct (Reasoning + Acting) agent** specif
 5. **📊 LangSmith Evaluation**: Comprehensive performance analysis
 
 ```bash
-# Run ReAct workflow
+# Run ReAct workflow with a prompt file (Recommended for long GDDs)
+uv run agent-games react --file my_game_idea.txt
+
+# Run ReAct workflow with inline prompt
 uv run agent-games react "Design a retro platformer" --interactive
 ```
 

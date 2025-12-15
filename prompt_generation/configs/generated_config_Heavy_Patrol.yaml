@@ -1,0 +1,20 @@
+name: Heavy Patrol
+role: armored security enforcer
+game_style: stylized cel-shaded sci-fi
+silhouette: broad-shouldered armor with bulkier helmet and chest plate
+color_palette:
+- deep navy armor
+- dark grey plates
+- teal visor
+key_props:
+- riot shield mount on back
+- ammo or tool pack on belt
+- utility belt pouches on hips
+animation_focus:
+- walk
+- patrol
+- brace
+- pursue
+- attack
+extra_notes: Heavier variant of corp patrol used for higher difficulty routes, silhouette
+  clearly bulkier to signal increased threat.

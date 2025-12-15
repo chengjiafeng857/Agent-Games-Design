@@ -1,0 +1,18 @@
+name: Taj
+role: snack stall vendor
+game_style: stylized cel-shaded narrative
+silhouette: slim standing figure with apron and headwear
+color_palette:
+- neutral clothing
+- amber accents
+- teal trim
+key_props:
+- order pad clipped to belt
+- condiment pouch on hip
+animation_focus:
+- idle
+- talk
+- serve
+- gesture
+extra_notes: Younger hustling vendor near the kiosk, adding lively motion to the crowded
+  night market.

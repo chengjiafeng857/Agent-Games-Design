@@ -1,0 +1,19 @@
+name: Kilo
+role: Companion drone
+game_style: stylized cel-shaded
+silhouette: small hovering orb with side fins
+color_palette:
+- white
+- teal accents
+- dark metal
+key_props:
+- sensor array mounted on underside
+- mini speaker grille on front body
+animation_focus:
+- hover
+- orbit
+- ping
+- idle bob
+- follow
+extra_notes: Often hovers close to Aya at shoulder height, with subtle, chatty personality
+  conveyed through motion and light cues.
