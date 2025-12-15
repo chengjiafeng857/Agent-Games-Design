@@ -4,7 +4,7 @@ This document explains how the asset generation system works in the Agent Games 
 
 ## Overview
 
-The asset generation system automatically creates game design assets using AI models, primarily **DALL-E 3**, based on requests generated during the planning phase.
+The asset generation system automatically creates game design assets using AI models, primarily **Google Gemini 3 Pro Preview**, based on requests generated during the planning phase.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ The asset generation system automatically creates game design assets using AI mo
 
 3. **GameDesignAsset** (State Model)
    - Represents a generated asset
-   - Contains image URL, prompt, metadata, and quality score
+   - Contains image path/URL, prompt, metadata, and quality score
 
 4. **Workflow Integration**
    - `asset_generation_node` in `react_workflow.py`
@@ -33,13 +33,14 @@ The asset generation system automatically creates game design assets using AI mo
 
 | Model | Status | Use Case | API |
 |-------|--------|----------|-----|
-| **DALL-E 3** | ✅ **Fully Integrated** | High-quality photorealistic images | OpenAI |
-| Google Nano | 🔄 Prompt Only | Fast generation, iteration | Google Imagen |
+| **Gemini 3 Pro** | ✅ **Fully Integrated** | High-quality image generation | Google Generative AI |
+| DALL-E 3 | 🔄 Legacy (routed to Gemini) | Backward compatibility | - |
+| Google Nano | 🔄 Legacy (routed to Gemini) | Backward compatibility | - |
 | Midjourney | 🔄 Prompt Only | Artistic, stylized images | Discord API |
 | Stable Diffusion | 🔄 Prompt Only | Customizable, open-source | Various |
 | Adobe Firefly | 🔄 Prompt Only | Commercial-safe content | Adobe |
 
-> **Note**: Currently, only DALL-E 3 generates actual images. Other models generate optimized prompts for manual use.
+> **Note**: Gemini 3 Pro Preview (`gemini-3-pro-image-preview`) is the primary model for actual image generation. Legacy `dalle_3` and `google_nano` requests are automatically routed to Gemini.
 
 ## How It Works
 
@@ -59,7 +60,7 @@ The `PlanningAgent` analyzes the user's request and creates `AssetRequest` objec
         "format": "PNG",
         "style": "retro"
     },
-    "target_model": "dalle_3"
+    "target_model": "gemini_3_pro"
 }
 ```
 
@@ -73,9 +74,9 @@ asset_generator = AssetGenerator()
 generated_assets = asset_generator.generate_assets(state.asset_requests)
 ```
 
-### 3. DALL-E 3 Generation
+### 3. Gemini 3 Pro Generation
 
-For each asset request targeting DALL-E 3:
+For each asset request targeting Gemini 3 Pro:
 
 1. **Prompt Optimization**: Creates a detailed, optimized prompt
    ```
@@ -85,28 +86,38 @@ For each asset request targeting DALL-E 3:
    High quality, professional game design asset
    ```
 
-2. **API Call**: Sends request to OpenAI
+2. **API Call**: Sends request to Google Generative AI
    ```python
-   response = client.images.generate(
-       model="dall-e-3",
-       prompt=optimized_prompt,
-       size="1024x1024",
-       quality="standard",
-       style="vivid",
-       n=1
+   from google import genai
+   from google.genai import types
+   
+   client = genai.Client(api_key=api_key)
+   
+   config = types.GenerateContentConfig(
+       response_modalities=['IMAGE'],
+       image_config=types.ImageConfig(
+           aspect_ratio="1:1",
+           image_size="2K",
+       ),
+   )
+   
+   response = client.models.generate_content(
+       model="gemini-3-pro-image-preview",
+       contents=[optimized_prompt],
+       config=config,
    )
    ```
 
-3. **Result Processing**: Extracts image URL and metadata
+3. **Result Processing**: Saves image to disk and creates asset record
    ```python
    GameDesignAsset(
        asset_id="char_001",
        asset_type="character_concept",
        title="Main Character Hero",
-       generated_prompt="...",  # DALL-E 3 revised prompt
-       model_used="dalle_3",
-       image_url="https://...",
-       quality_score=0.85
+       generated_prompt="...",
+       model_used="gemini_3_pro",
+       image_url="output/assets/main_character_hero_20251215_120000.jpg",
+       quality_score=0.90
    )
    ```
 
@@ -124,14 +135,16 @@ The system includes robust error handling:
 ### Environment Variables
 
 ```bash
-# Required
+# Required for planning
 OPENAI_API_KEY=sk-...
 
+# Required for image generation
+GEMINI_API_KEY=your-gemini-api-key
+
 # Optional (defaults)
-DALLE3_SIZE=1024x1024          # 1024x1024, 1024x1792, 1792x1024
-DALLE3_QUALITY=standard        # standard or hd
-DALLE3_STYLE=vivid             # vivid or natural
-MAX_RETRIES=3                  # Maximum retry attempts
+GEMINI_ASPECT_RATIO=1:1         # 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
+GEMINI_IMAGE_SIZE=2K            # 1K, 2K, 4K
+MAX_RETRIES=3                   # Maximum retry attempts
 ```
 
 ### Programmatic Configuration
@@ -140,10 +153,10 @@ MAX_RETRIES=3                  # Maximum retry attempts
 from agent_games_design.agents import AssetGenerator, AssetGenerationConfig
 
 config = AssetGenerationConfig(
-    dalle3_size="1024x1792",
-    dalle3_quality="hd",
-    dalle3_style="natural",
-    max_retries=5
+    gemini_aspect_ratio="16:9",
+    gemini_image_size="4K",
+    max_retries=5,
+    output_dir="output/game_assets"
 )
 
 generator = AssetGenerator(config=config)
@@ -163,28 +176,28 @@ The system supports various asset types:
 - `background`: Background images
 - `promotional_art`: Marketing and promotional images
 
-## DALL-E 3 Size Mapping
+## Gemini Aspect Ratio Mapping
 
-The system automatically maps technical specs to DALL-E 3 sizes:
+The system automatically maps technical specs to Gemini aspect ratios:
 
-| Request | DALL-E 3 Size |
-|---------|---------------|
-| `resolution: "1024x1024"` | `1024x1024` (square) |
-| `resolution: "portrait"` | `1024x1792` (portrait) |
-| `resolution: "1792x1024"` | `1792x1024` (landscape) |
-| `resolution: "landscape"` | `1792x1024` (landscape) |
+| Request | Gemini Aspect Ratio |
+|---------|---------------------|
+| `resolution: "1024x1024"` or default | `1:1` (square) |
+| `resolution: "portrait"` | `2:3` (portrait) |
+| `resolution: "landscape"` | `3:2` (landscape) |
+| `resolution: "wide"` or `16:9` | `16:9` (widescreen) |
+| `resolution: "vertical"` or `9:16` | `9:16` (mobile) |
+| `resolution: "banner"` or `21:9` | `21:9` (ultrawide) |
 
-## DALL-E 3 Style Selection
+## Image Size Options
 
-The system analyzes style requirements to choose between `vivid` and `natural`:
+Gemini 3 Pro supports three resolution tiers:
 
-**Natural Style** (subtle, realistic):
-- Keywords: "realistic", "photographic", "subtle", "natural", "muted"
-- Best for: Realistic scenes, subtle artwork
-
-**Vivid Style** (artistic, vibrant):
-- Default choice
-- Best for: Stylized art, vibrant colors, game assets
+| Size | Resolution | Best For |
+|------|------------|----------|
+| `1K` | 1024px | Quick iterations, previews |
+| `2K` | 2048px | Standard quality assets (default) |
+| `4K` | 4096px | High-resolution final assets |
 
 ## Output
 
@@ -200,10 +213,10 @@ The system analyzes style requirements to choose between `vivid` and `natural`:
 📋 Generated 17 execution steps
 🎨 Identified 14 assets to generate
 🖼️  Generated 14/14 assets successfully
-  ✅ Main Character Hero (dalle_3)
-     URL: https://oaidalleapiprodscus.blob.core.windows.net/...
-  ✅ Enemy Character (dalle_3)
-     URL: https://oaidalleapiprodscus.blob.core.windows.net/...
+  ✅ Main Character Hero (gemini_3_pro)
+     File: output/assets/main_character_hero_20251215_120000.jpg
+  ✅ Enemy Character (gemini_3_pro)
+     File: output/assets/enemy_character_20251215_120015.jpg
   ...
 ```
 
@@ -220,41 +233,36 @@ Generated assets are included in the markdown export:
 ### 1. Main Character Hero
 
 **Type:** character_concept
-**Model Used:** dalle_3
+**Model Used:** gemini_3_pro
 **Status:** ✅ Successfully Generated
 
-**Image URL:** [https://...]
+**Image Path:** output/assets/main_character_hero_20251215_120000.jpg
 
-![Main Character Hero](https://...)
+![Main Character Hero](output/assets/main_character_hero_20251215_120000.jpg)
 
 **Generated Prompt:**
 ```
 A brave knight with shining armor...
 ```
 
-**Quality Score:** 0.85/1.0
+**Quality Score:** 0.90/1.0
 ```
 
 ## API Usage and Costs
 
-### DALL-E 3 Pricing (as of 2025)
+### Gemini 3 Pro Pricing
 
-| Size | Quality | Cost per Image |
-|------|---------|----------------|
-| 1024x1024 | Standard | ~$0.040 |
-| 1024x1024 | HD | ~$0.080 |
-| 1024x1792 | Standard | ~$0.080 |
-| 1024x1792 | HD | ~$0.120 |
+Gemini 3 Pro image generation pricing varies by resolution and usage tier. Check the [Google AI pricing page](https://ai.google.dev/pricing) for current rates.
 
-**Example**: Generating 14 standard quality 1024x1024 images costs approximately **$0.56**.
+| Size | Typical Cost per Image |
+|------|------------------------|
+| 1K | Lower |
+| 2K | Medium |
+| 4K | Higher |
 
 ### Rate Limits
 
-DALL-E 3 rate limits (varies by tier):
-- **Free Tier**: Not supported
-- **Tier 1**: 5 RPM (requests per minute)
-- **Tier 2**: 7 RPM
-- **Tier 3+**: Higher limits
+Gemini API rate limits depend on your API tier and project quota. Check your Google Cloud Console for specific limits.
 
 ## Advanced Usage
 
@@ -272,8 +280,8 @@ custom_request = AssetRequest(
     title="Custom Hero",
     description="Your detailed description here...",
     style_requirements=["specific", "style", "tags"],
-    technical_specs={"resolution": "1024x1792"},
-    target_model=ModelType.DALLE_3
+    technical_specs={"resolution": "portrait"},
+    target_model=ModelType.GEMINI_3_PRO
 )
 
 assets = generator.generate_assets([custom_request])
@@ -283,7 +291,7 @@ assets = generator.generate_assets([custom_request])
 
 Generated assets include quality scores:
 
-- **DALL-E 3**: `0.85` (consistently high quality)
+- **Gemini 3 Pro**: `0.90` (consistently high quality)
 - **Failed**: `0.0` (generation failed)
 - **Prompt Only**: `None` (no image generated)
 
@@ -293,12 +301,11 @@ Each asset includes metadata:
 
 ```python
 asset.metadata = {
-    "original_prompt": "...",      # User's original request
-    "size": "1024x1024",            # Image dimensions
-    "quality": "standard",          # Quality setting
-    "style": "vivid",               # Style setting
-    "timestamp": "2025-10-21T...",  # Generation time
-    "attempt": 1                    # Attempt number
+    "prompt": "...",                # Optimized prompt used
+    "aspect_ratio": "1:1",          # Aspect ratio
+    "image_size": "2K",             # Resolution tier
+    "model": "gemini-3-pro-image-preview",  # Model name
+    "timestamp": "2025-12-15T...",  # Generation time
 }
 ```
 
@@ -310,19 +317,19 @@ asset.metadata = {
 
 **Solutions**:
 1. Check that `asset_requests` are created during planning
-2. Verify `OPENAI_API_KEY` is set correctly
+2. Verify `GEMINI_API_KEY` is set correctly
 3. Check console for error messages
 4. Review `.env` file configuration
 
-### DALL-E 3 API Errors
+### Gemini API Errors
 
-**Problem**: 400/500 errors from OpenAI
+**Problem**: API errors from Google
 
 **Solutions**:
 1. **Content Policy Violation**: Adjust asset description
-2. **Rate Limit**: Wait and retry, or upgrade tier
-3. **Invalid Size**: Use supported sizes (1024x1024, 1024x1792, 1792x1024)
-4. **Prompt Too Long**: Descriptions are auto-truncated to 3900 chars
+2. **Rate Limit**: Wait and retry, or check quota
+3. **Invalid Configuration**: Verify aspect_ratio and image_size values
+4. **Authentication**: Ensure GEMINI_API_KEY is valid
 
 ### Low Quality Results
 
@@ -330,13 +337,13 @@ asset.metadata = {
 1. Provide more detailed descriptions
 2. Include specific style requirements
 3. Add reference image descriptions
-4. Use HD quality: `dalle3_quality="hd"`
+4. Use `4K` image size for higher resolution
 
 ### Cost Concerns
 
 **Solutions**:
 1. Limit number of assets in planning
-2. Use "standard" quality instead of "hd"
+2. Use `1K` size for iterations, `2K` for final
 3. Generate prompts only for external use
 4. Test with smaller asset sets first
 
@@ -363,6 +370,22 @@ asset.metadata = {
 - Weapon Concepts (magical staff)
 - Character Icon (UI style)
 
+## Migration from DALL-E 3
+
+If you were previously using DALL-E 3, the migration is seamless:
+
+1. **Set Gemini API Key**: Add `GEMINI_API_KEY` to your `.env` file
+2. **Legacy Compatibility**: Existing `dalle_3` requests are automatically routed to Gemini
+3. **Update Planning Prompts**: Use `gemini_3_pro` for new asset requests (optional)
+
+```python
+# Old (still works - routed to Gemini)
+target_model=ModelType.DALLE_3
+
+# New (recommended)
+target_model=ModelType.GEMINI_3_PRO
+```
+
 ## Future Enhancements
 
 Planned improvements:
@@ -371,17 +394,16 @@ Planned improvements:
 - [ ] **Batch optimization**: Parallel generation for faster completion
 - [ ] **Style transfer**: Apply consistent style across all assets
 - [ ] **Asset variations**: Generate multiple variations per request
-- [ ] **Local storage**: Download and save images locally
+- [ ] **Image editing**: Edit generated images with text prompts
 - [ ] **Asset library**: Build a reusable asset collection
 - [ ] **Custom models**: Support for fine-tuned models
 
 ## References
 
-- [DALL-E 3 API Documentation](https://platform.openai.com/docs/guides/images)
-- [OpenAI Pricing](https://openai.com/pricing)
-- [Image Generation Best Practices](https://platform.openai.com/docs/guides/images/usage)
+- [Google AI Studio](https://ai.google.dev/)
+- [Gemini API Documentation](https://ai.google.dev/gemini-api/docs)
+- [Google Generative AI Python SDK](https://github.com/google-gemini/generative-ai-python)
 
 ---
 
-**Last Updated**: October 21, 2025
-
+**Last Updated**: December 15, 2025

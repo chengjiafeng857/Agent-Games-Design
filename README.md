@@ -167,7 +167,7 @@ uv run agent-games react "Design a retro platformer" --interactive
 ### 🎨 Asset Generation Models
 
 - **Google Nano**: Primary model for fast, efficient generation
-- **DALL-E 3**: High-quality photorealistic images  
+- **Gemini 3 Pro Preview**: High-quality AI image generation (primary model)  
 - **Midjourney**: Artistic and stylized images
 - **Stable Diffusion**: Customizable open-source generation
 - **Adobe Firefly**: Commercial-safe creative AI

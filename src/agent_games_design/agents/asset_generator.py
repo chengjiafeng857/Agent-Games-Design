@@ -1,10 +1,12 @@
-"""Asset generator for game design using DALL-E 3 and other models."""
+"""Asset generator for game design using Gemini 3 Pro Preview and other models."""
 
 import logging
+import base64
+import os
 from typing import List, Optional
 from datetime import datetime
+from pathlib import Path
 
-from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 from pydantic import BaseModel, Field
 
 from ..config import settings
@@ -16,13 +18,24 @@ logger = logging.getLogger(__name__)
 class AssetGenerationConfig(BaseModel):
     """Configuration for asset generation."""
 
-    dalle3_size: str = Field(default="1024x1024", description="Image size for DALL-E 3")
-    dalle3_quality: str = Field(default="standard", description="Quality: standard or hd")
+    # Gemini 3 Pro settings
+    gemini_aspect_ratio: str = Field(
+        default="1:1",
+        description="Aspect ratio for Gemini. Options: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9"
+    )
+    gemini_image_size: str = Field(
+        default="2K",
+        description="Image resolution for Gemini. Options: 1K, 2K, 4K"
+    )
     max_retries: int = Field(default=3, description="Maximum retries on failure")
+    output_dir: str = Field(default="output/assets", description="Directory to save generated images")
 
 
 class AssetGenerator:
     """Generates game design assets using AI models."""
+
+    # Gemini 3 Pro Image Preview model name
+    GEMINI_MODEL = "gemini-3-pro-image-preview"
 
     def __init__(
         self,
@@ -32,20 +45,21 @@ class AssetGenerator:
         """Initialize the asset generator.
 
         Args:
-            api_key: OpenAI API key (defaults to settings)
+            api_key: Gemini API key (defaults to settings)
             config: Asset generation configuration
         """
         self.config = config or AssetGenerationConfig()
+        self.api_key = api_key or settings.gemini_api_key
         
-        # Initialize DALL-E 3 wrapper with LangChain
-        self.dalle_tool = DallEAPIWrapper(
-            model="dall-e-3",
-            api_key=api_key or settings.openai_api_key,
-            size=self.config.dalle3_size,
-            quality=self.config.dalle3_quality,
-            n=1,
-            max_retries=self.config.max_retries,
-        )
+        if not self.api_key:
+            logger.warning(
+                "Gemini API key not set. Set GEMINI_API_KEY environment variable "
+                "or pass api_key to AssetGenerator."
+            )
+        
+        # Ensure output directory exists (use absolute path)
+        self.output_dir = Path(self.config.output_dir).resolve()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_assets(
         self, asset_requests: List[AssetRequest]
@@ -107,15 +121,16 @@ class AssetGenerator:
             Generated asset
         """
         # Route to appropriate generator based on target model
-        if request.target_model == ModelType.DALLE_3:
-            return self._generate_with_dalle3(request)
+        # Gemini 3 Pro is the primary model, also handle legacy DALLE_3 and GOOGLE_NANO
+        if request.target_model in [ModelType.GEMINI_3_PRO, ModelType.DALLE_3, ModelType.GOOGLE_NANO]:
+            return self._generate_with_gemini(request)
         else:
             # For other models, generate a high-quality prompt but don't actually generate
             # This allows users to use the prompts with external tools
             return self._generate_prompt_only(request)
 
-    def _generate_with_dalle3(self, request: AssetRequest) -> GameDesignAsset:
-        """Generate an asset using DALL-E 3 via LangChain wrapper.
+    def _generate_with_gemini(self, request: AssetRequest) -> GameDesignAsset:
+        """Generate an asset using Gemini 3 Pro Preview.
 
         Args:
             request: Asset request specification
@@ -123,53 +138,110 @@ class AssetGenerator:
         Returns:
             Generated asset with image URL
         """
-        # Create optimized prompt for DALL-E 3
-        prompt = self._create_dalle3_prompt(request)
-
-        # Determine size based on technical specs
-        size = self._get_dalle3_size(request)
-
-        # Update the DALL-E wrapper's size if needed
-        if size != self.dalle_tool.size:
-            # Create a new wrapper with updated size
-            self.dalle_tool = DallEAPIWrapper(
-                model="dall-e-3",
-                api_key=settings.openai_api_key,
-                size=size,
-                quality=self.config.dalle3_quality,
-                n=1,
-                max_retries=self.config.max_retries,
+        # Import google-genai here to allow the rest of the code to work without it
+        try:
+            from google import genai
+            from google.genai import types
+        except ImportError:
+            raise ImportError(
+                "google-genai package is required for image generation.\n"
+                "Install it with: pip install google-genai\n"
+                "Or: uv add google-genai"
             )
 
-        try:
-            logger.debug(f"Generating with DALL-E 3: {prompt[:100]}...")
-            
-            # Use LangChain's DallEAPIWrapper to generate image
-            # The run() method returns the image URL as a string
-            image_url = self.dalle_tool.run(prompt)
-            
-            # Remove any whitespace/newlines from the URL
-            image_url = image_url.strip()
+        if not self.api_key:
+            raise ValueError(
+                "Gemini API key not set. Set GEMINI_API_KEY environment variable "
+                "or pass api_key to AssetGenerator."
+            )
 
+        # Create optimized prompt for Gemini
+        prompt = self._create_gemini_prompt(request)
+
+        # Determine aspect ratio based on technical specs
+        aspect_ratio = self._get_gemini_aspect_ratio(request)
+        image_size = self.config.gemini_image_size
+
+        try:
+            logger.debug(f"Generating with Gemini 3 Pro: {prompt[:100]}...")
+            
+            # Create Gemini client
+            client = genai.Client(api_key=self.api_key)
+            
+            # Configure image generation settings
+            config = types.GenerateContentConfig(
+                response_modalities=['IMAGE'],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                    image_size=image_size,
+                ),
+            )
+            
+            # Generate the image
+            response = client.models.generate_content(
+                model=self.GEMINI_MODEL,
+                contents=[prompt],
+                config=config,
+            )
+            
+            # Extract image from response
+            image_data = None
+            for part in response.parts:
+                if part.inline_data is not None:
+                    image_data = part.inline_data.data
+                    break
+            
+            if image_data is None:
+                raise Exception("No image was generated. The API returned an empty response.")
+            
+            # Save image to file and get URL/path
+            image_path = self._save_image(request, image_data)
+            
             return GameDesignAsset(
                 asset_id=request.asset_id,
                 asset_type=request.asset_type,
                 title=request.title,
                 generated_prompt=prompt,
-                model_used=ModelType.DALLE_3,
-                image_url=image_url,
+                model_used=ModelType.GEMINI_3_PRO,
+                image_url=str(image_path),
                 metadata={
                     "prompt": prompt,
-                    "size": size,
-                    "quality": self.config.dalle3_quality,
+                    "aspect_ratio": aspect_ratio,
+                    "image_size": image_size,
+                    "model": self.GEMINI_MODEL,
                     "timestamp": datetime.utcnow().isoformat(),
                 },
-                quality_score=0.85,  # DALL-E 3 generally produces high quality
+                quality_score=0.90,  # Gemini 3 Pro produces high quality images
             )
 
         except Exception as e:
-            logger.error(f"DALL-E 3 generation failed: {e}")
+            logger.error(f"Gemini 3 Pro generation failed: {e}")
             raise
+
+    def _save_image(self, request: AssetRequest, image_data: bytes) -> Path:
+        """Save generated image to file.
+
+        Args:
+            request: Asset request specification
+            image_data: Raw image bytes
+
+        Returns:
+            Absolute path to saved image file
+        """
+        # Create safe filename from title
+        safe_title = "".join(c if c.isalnum() or c in "._- " else "_" for c in request.title)
+        safe_title = safe_title.replace(" ", "_").lower()
+        
+        # Add timestamp for uniqueness
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        filename = f"{safe_title}_{timestamp}.jpg"
+        
+        # Save to output directory (absolute path)
+        file_path = (self.output_dir / filename).resolve()
+        file_path.write_bytes(image_data)
+        
+        logger.info(f"💾 Saved image to: {file_path}")
+        return file_path
 
     def _generate_prompt_only(self, request: AssetRequest) -> GameDesignAsset:
         """Generate a high-quality prompt for external use.
@@ -196,10 +268,10 @@ class AssetGenerator:
             quality_score=None,
         )
 
-    def _create_dalle3_prompt(self, request: AssetRequest) -> str:
-        """Create an optimized prompt for DALL-E 3.
+    def _create_gemini_prompt(self, request: AssetRequest) -> str:
+        """Create an optimized prompt for Gemini 3 Pro.
 
-        DALL-E 3 works best with:
+        Gemini 3 Pro works best with:
         - Detailed, descriptive prompts
         - Natural language
         - Specific style instructions
@@ -233,9 +305,9 @@ class AssetGenerator:
 
         prompt = ". ".join(parts)
 
-        # DALL-E 3 has a 4000 character limit
-        if len(prompt) > 3900:
-            prompt = prompt[:3900] + "..."
+        # Gemini can handle long prompts, but keep it reasonable
+        if len(prompt) > 4000:
+            prompt = prompt[:4000] + "..."
 
         return prompt
 
@@ -303,26 +375,33 @@ class AssetGenerator:
         }
         return descriptions.get(asset_type, "a game design asset")
 
-    def _get_dalle3_size(self, request: AssetRequest) -> str:
-        """Determine appropriate DALL-E 3 size.
+    def _get_gemini_aspect_ratio(self, request: AssetRequest) -> str:
+        """Determine appropriate Gemini aspect ratio.
 
-        DALL-E 3 supports: 1024x1024, 1024x1792, 1792x1024
+        Gemini supports: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
         """
         spec_resolution = request.technical_specs.get("resolution", "1024x1024")
 
-        # Map common resolutions to DALL-E 3 sizes
-        if "1792" in spec_resolution or "portrait" in spec_resolution.lower():
-            return "1024x1792"
+        # Map common resolutions/descriptions to Gemini aspect ratios
+        if "portrait" in spec_resolution.lower():
+            return "2:3"
         elif "landscape" in spec_resolution.lower():
-            return "1792x1024"
+            return "3:2"
+        elif "wide" in spec_resolution.lower() or "16:9" in spec_resolution:
+            return "16:9"
+        elif "vertical" in spec_resolution.lower() or "9:16" in spec_resolution:
+            return "9:16"
+        elif "banner" in spec_resolution.lower() or "21:9" in spec_resolution:
+            return "21:9"
         else:
-            return "1024x1024"
+            return self.config.gemini_aspect_ratio  # Default from config
 
     def _get_model_instructions(self, model_type: ModelType) -> str:
         """Get model-specific instructions for prompt usage."""
         instructions = {
-            ModelType.DALLE_3: "Use with OpenAI DALL-E 3 API. Best for photorealistic and detailed images.",
-            ModelType.GOOGLE_NANO: "Use with Google Imagen or similar. Fast generation, good for iteration.",
+            ModelType.GEMINI_3_PRO: "Use with Google Gemini 3 Pro Preview. High-quality image generation with excellent detail.",
+            ModelType.GOOGLE_NANO: "Use with Google Gemini 3 Pro Preview. High-quality image generation.",
+            ModelType.DALLE_3: "Use with OpenAI DALL-E 3 API (legacy). Best for photorealistic and detailed images.",
             ModelType.MIDJOURNEY: "Use in Midjourney Discord. Add --v 6 for latest version, --ar for aspect ratio.",
             ModelType.STABLE_DIFFUSION: "Use with Stable Diffusion. Consider using LoRA models for specific styles.",
             ModelType.FIREFLY: "Use with Adobe Firefly. Excellent for commercial-safe content generation.",
@@ -330,4 +409,3 @@ class AssetGenerator:
         return instructions.get(
             model_type, "Follow your model's specific prompt format guidelines."
         )
-

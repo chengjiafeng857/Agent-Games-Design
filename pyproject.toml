@@ -17,6 +17,7 @@ dependencies = [
     "httpx>=0.28.0",
     "openai>=1.0.0",  # GPT-5 Pro support via Responses API
     "fal-client>=0.4.1",  # FAL AI image generation
+    "google-genai>=1.0.0",  # Gemini 3 Pro image generation
 ]
 
 [project.scripts]

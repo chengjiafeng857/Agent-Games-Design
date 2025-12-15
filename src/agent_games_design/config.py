@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     # API Keys
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    gemini_api_key: str = ""  # Google Gemini API key for image generation
 
     # LangSmith (optional)
     langchain_tracing_v2: bool = False

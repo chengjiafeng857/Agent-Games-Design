@@ -151,7 +151,7 @@ RESPONSE FORMAT - Return ONLY this JSON structure (no markdown, no code blocks):
                 "maps": ["diffuse", "normal", "roughness"]
             },
             "reference_images": ["description1", "description2"],
-            "target_model": "google_nano|dalle_3|midjourney|stable_diffusion|firefly"
+            "target_model": "gemini_3_pro|google_nano|dalle_3|midjourney|stable_diffusion|firefly"
         }
     ]
 }
@@ -168,14 +168,15 @@ ASSET TYPES AVAILABLE:
 - promotional_art: Marketing and promotional images
 
 MODELS AVAILABLE (in priority order):
-- dalle_3: HIGH-QUALITY IMAGE GENERATION - USE THIS FOR ALL VISUAL ASSETS (primary choice for actual image generation)
-- google_nano: Prompt generation only (use only if dalle_3 is not suitable)
+- gemini_3_pro: HIGH-QUALITY IMAGE GENERATION - USE THIS FOR ALL VISUAL ASSETS (primary choice using Google Gemini 3 Pro Preview)
+- google_nano: Alias for gemini_3_pro (legacy compatibility)
+- dalle_3: Legacy DALL-E 3 (now handled by Gemini)
 - midjourney: Prompt generation only (artistic/stylized prompts)
 - stable_diffusion: Prompt generation only (customizable prompts)
 - firefly: Prompt generation only (commercial-safe prompts)
 
-IMPORTANT: Use "dalle_3" as the target_model for ALL asset requests to generate actual images.
-Other models will only generate prompts for manual use.
+IMPORTANT: Use "gemini_3_pro" as the target_model for ALL asset requests to generate actual images.
+Other models (midjourney, stable_diffusion, firefly) will only generate prompts for manual use.
 
 PLANNING PRINCIPLES:
 1. Start with research and concept development

@@ -66,7 +66,7 @@ def create_react_workflow():
         }
 
     def asset_generation_node(state: ReActState) -> Dict[str, Any]:
-        """Asset generation node - creates game assets using DALL-E 3 and other models."""
+        """Asset generation node - creates game assets using Gemini 3 Pro and other models."""
         import logging
         logger = logging.getLogger(__name__)
         

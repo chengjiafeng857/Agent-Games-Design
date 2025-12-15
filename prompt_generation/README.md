@@ -42,7 +42,7 @@ uv run generate_prompts.py refine -i configs/aethel.yaml --web-search
 # Generate T-pose images (Stage 4)
 uv run generate_prompts.py images -i configs/aethel.yaml
 
-# Generate 3D model with Hunyuan API (Stage 5) - NEW!
+# Generate 3D model with Hunyuan API (Stage 5) 
 uv run generate_prompts.py hunyuan3d -i configs/aethel.yaml
 uv run generate_prompts.py hunyuan3d --image output/images/tpose_front.png
 uv run generate_prompts.py hunyuan3d --prompt "A cute panda figurine"
@@ -60,11 +60,13 @@ uv run generate_prompts.py images -i configs/aethel.yaml --prompts-only
 ### Option 1: `.env` File (Recommended)
 
 Copy the template and add your keys:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```env
 # OpenAI (Stage 2 - LLM Refinement)
 OPENAI_API_KEY=sk-your-openai-key-here
@@ -123,6 +125,7 @@ These environment variables control the Hunyuan 3D generation settings:
 | `HUNYUAN3D_POLYGON_TYPE` | `triangle`, `quadrilateral` | `triangle` | Polygon type (LowPoly mode only) |
 
 **GenerateType Options:**
+
 - **Normal** - Textured geometry model (default)
 - **LowPoly** - Intelligently reduced faces for game-ready models
 - **Geometry** - White model without texture (for sculpting)
@@ -291,21 +294,25 @@ uv run generate_prompts.py hunyuan3d --prompt "A robot" --provider sdk
 ```
 
 **Input Modes** (use exactly ONE):
+
 - `--input/-i` - Character spec file (uses name + role as prompt)
 - `--prompt/-p` - Direct text description
 - `--image` - Local image file (front view, requires COS credentials)
 - `--image-url` - Remote image URL
 
 **Multi-View Options** (optional, use with `--image` or `--image-url`):
+
 - `--left-view` - Left view image for better 3D reconstruction
 - `--right-view` - Right view image for better 3D reconstruction
 - `--back-view` - Back view image for better 3D reconstruction
 
 **Provider Options:**
+
 - `--provider http` - Raw HTTP with TC3 signing (default, no SDK needed)
 - `--provider sdk` - Tencent Cloud SDK (requires: `uv add tencentcloud-sdk-python-ai3d`)
 
 **Generation Settings** (via environment variables):
+
 - `HUNYUAN3D_ENABLE_PBR` - Enable PBR materials (`true`/`false`, default: `false`)
 - `HUNYUAN3D_FACE_COUNT` - Polygon count (`40000`-`1500000`, default: `500000`)
 - `HUNYUAN3D_GENERATE_TYPE` - Generation mode:
@@ -316,6 +323,7 @@ uv run generate_prompts.py hunyuan3d --prompt "A robot" --provider sdk
 - `HUNYUAN3D_POLYGON_TYPE` - For LowPoly mode: `triangle` (default) or `quadrilateral`
 
 **Output:**
+
 - Downloads and extracts the 3D model (`.obj`, `.glb`, `.mtl`, textures)
 - Identifies the main `.obj` file (largest by size)
 - Creates `metadata.json` with job info and file manifest
@@ -394,16 +402,19 @@ Meta-prompts you can manually paste into Gemini for refinement.
 **The key feature!** Uses OpenAI GPT-5 via the Responses API to transform your character spec into optimized image generation prompts.
 
 **Models:**
+
 - **gpt-5**: Flagship reasoning model (default)
 - **gpt-5-mini**: Faster, cost-efficient
 - **gpt-4.1**: Smart non-reasoning model
 
 **With `--web-search` enabled:**
+
 - Uses the `web_search` tool to find current AI art prompt trends
 - Searches for popular style keywords that work with image generators
 - Finds reference images of similar character types
 
 The LLM generates:
+
 1. `refined_concept` - Optimized concept art prompt
 2. `refined_tpose_front` - Front view T-pose prompt
 3. `refined_tpose_side` - Side view T-pose prompt  
@@ -414,12 +425,14 @@ These refined prompts are ready to use directly in image generators!
 ### Stage 3: Checklist & Notes
 
 Human-readable documents for validation:
+
 - **2D Refinement Criteria**: Checklist to validate T-pose images
 - **Design Notes**: Internal reference document
 
 ### Stage 4: Image Generation (Gemini API)
 
 Generates actual T-pose images using Gemini 3 Pro Image Preview:
+
 - Front view
 - Side view  
 - Back view
@@ -436,12 +449,14 @@ Generates actual T-pose images using Gemini 3 Pro Image Preview:
 6. **Metadata** - Write `metadata.json` with job info
 
 **Features:**
+
 - **Multi-view support** - Provide left/right/back views for better 3D reconstruction
 - **Configurable settings** - Control PBR materials, polygon count, generation mode
 - **Multiple providers** - Raw HTTP (default) or Tencent Cloud SDK
 - **Automatic COS upload** - Local images are uploaded via SDK for reliability
 
 **Technical Details:**
+
 - Uses raw HTTP with TC3-HMAC-SHA256 authentication (or optional SDK)
 - Local images are uploaded to Tencent COS via SDK (public-read ACL)
 - Supports text prompts, single image, or multi-view images

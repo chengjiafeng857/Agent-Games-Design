@@ -1,6 +1,7 @@
 """Output manager for workflow results and assets."""
 
 import logging
+import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
@@ -65,16 +66,16 @@ class OutputManager:
         output_folder: Path,
         asset_index: int
     ) -> Optional[Path]:
-        """Download an asset from a URL to the output folder.
+        """Download an asset from a URL or copy from local path to the output folder.
         
         Args:
-            image_url: URL of the image to download
+            image_url: URL of the image to download or local file path
             asset_title: Title of the asset (for filename)
             output_folder: Folder to save to
             asset_index: Index of the asset (for unique naming)
             
         Returns:
-            Path to the downloaded file, or None if failed
+            Path to the downloaded/copied file, or None if failed
         """
         try:
             # Create safe filename from title
@@ -84,6 +85,24 @@ class OutputManager:
             ).strip()
             safe_title = safe_title.replace(' ', '_')[:50]
             
+            # Check if this is a local file path (not a URL)
+            source_path = Path(image_url)
+            if source_path.exists() and source_path.is_file():
+                # Local file - copy it to the output folder
+                extension = source_path.suffix or ".jpg"
+                filename = f"{asset_index:02d}_{safe_title}{extension}"
+                filepath = output_folder / "assets" / filename
+                
+                logger.info(f"Copying local asset: {asset_title}")
+                logger.debug(f"  From: {source_path}")
+                logger.debug(f"  To: {filepath}")
+                
+                shutil.copy2(source_path, filepath)
+                
+                logger.info(f"✅ Copied: {filename}")
+                return filepath
+            
+            # Not a local file - try to download from URL
             # Determine file extension from URL
             extension = ".png"  # Default to PNG
             if "." in image_url.split("?")[0]:

@@ -31,8 +31,9 @@ class AssetType(str, Enum):
 class ModelType(str, Enum):
     """Supported model types for asset generation."""
 
-    GOOGLE_NANO = "google_nano"
-    DALLE_3 = "dalle_3"
+    GEMINI_3_PRO = "gemini_3_pro"  # Primary image generation model (Gemini 3 Pro Preview)
+    GOOGLE_NANO = "google_nano"  # Legacy/alias - kept for backward compatibility
+    DALLE_3 = "dalle_3"  # Legacy - kept for backward compatibility
     MIDJOURNEY = "midjourney"
     STABLE_DIFFUSION = "stable_diffusion"
     FIREFLY = "firefly"

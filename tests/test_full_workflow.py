@@ -10,12 +10,16 @@ from agent_games_design.state import WorkflowStage, ModelType
 from agent_games_design.config import settings
 
 
-async def test_complete_workflow_with_dalle3():
-    """Test the complete workflow end-to-end with DALL-E 3 asset generation."""
+async def test_complete_workflow_with_gemini():
+    """Test the complete workflow end-to-end with Gemini 3 Pro asset generation."""
     
-    # Skip if no API key
+    # Skip if no API keys
     if not settings.openai_api_key or settings.openai_api_key == "your-api-key-here":
-        print("⚠️  Skipping: OpenAI API key not configured")
+        print("⚠️  Skipping: OpenAI API key not configured (needed for planning)")
+        return
+    
+    if not settings.gemini_api_key or settings.gemini_api_key == "your-api-key-here":
+        print("⚠️  Skipping: Gemini API key not configured (needed for image generation)")
         return
     
     # Create CLI instance
@@ -79,7 +83,7 @@ async def test_complete_workflow_with_dalle3():
     print("GENERATED ASSETS")
     print(f"{'='*80}")
     
-    dalle3_assets = []
+    gemini_assets = []
     successful_assets = []
     
     for i, asset in enumerate(results['generated_assets'], 1):
@@ -87,27 +91,28 @@ async def test_complete_workflow_with_dalle3():
         print(f"{i}. {status} {asset['title']}")
         print(f"   Model: {asset['model_used']}")
         
-        if asset['model_used'] == ModelType.DALLE_3.value:
-            dalle3_assets.append(asset)
+        # Check for Gemini models (including legacy DALLE_3 and GOOGLE_NANO which now use Gemini)
+        if asset['model_used'] in [ModelType.GEMINI_3_PRO.value, ModelType.DALLE_3.value, ModelType.GOOGLE_NANO.value]:
+            gemini_assets.append(asset)
         
         if asset.get('image_url'):
             successful_assets.append(asset)
-            print(f"   URL: {asset['image_url'][:60]}...")
+            print(f"   File: {asset['image_url'][:60]}...")
         
         if asset.get('generated_prompt'):
             print(f"   Prompt: {asset['generated_prompt'][:100]}...")
         print()
     
-    # Verify DALL-E 3 is being used
+    # Verify Gemini is being used
     print(f"\n{'='*80}")
     print("ASSET GENERATION ANALYSIS")
     print(f"{'='*80}")
     print(f"Total assets: {len(results['generated_assets'])}")
-    print(f"DALL-E 3 assets: {len(dalle3_assets)}")
+    print(f"Gemini 3 Pro assets: {len(gemini_assets)}")
     print(f"Successful (with images): {len(successful_assets)}")
     
-    assert len(dalle3_assets) > 0, (
-        f"Should have DALL-E 3 assets! Got models: "
+    assert len(gemini_assets) > 0, (
+        f"Should have Gemini 3 Pro assets! Got models: "
         f"{[a['model_used'] for a in results['generated_assets']]}"
     )
     
@@ -116,11 +121,17 @@ async def test_complete_workflow_with_dalle3():
         "Should have at least one successful asset with image_url"
     )
     
-    # Verify image URLs are valid
+    # Verify image files exist (Gemini saves to local files)
     for asset in successful_assets:
-        assert asset['image_url'].startswith('http'), (
-            f"Image URL should be valid HTTP URL: {asset['image_url']}"
-        )
+        # Gemini saves images locally, so check if path exists
+        image_path = Path(asset['image_url'])
+        if image_path.exists():
+            print(f"✅ Image file exists: {image_path}")
+        else:
+            # Could be a URL if using a different backend
+            assert asset['image_url'].startswith(('http', '/')), (
+                f"Image should be a valid path or URL: {asset['image_url']}"
+            )
     
     # Verify guidelines were generated
     assert results.get('guidelines'), "Guidelines should be generated"
@@ -176,6 +187,10 @@ async def test_workflow_stages():
     
     if not settings.openai_api_key or settings.openai_api_key == "your-api-key-here":
         print("⚠️  Skipping: OpenAI API key not configured")
+        return
+    
+    if not settings.gemini_api_key:
+        print("⚠️  Skipping: Gemini API key not configured")
         return
     
     cli = SimpleReActCLI()
@@ -254,15 +269,15 @@ async def test_workflow_stages():
 async def test_asset_generation_only():
     """Test just the asset generation component."""
     
-    if not settings.openai_api_key or settings.openai_api_key == "your-api-key-here":
-        print("⚠️  Skipping: OpenAI API key not configured")
+    if not settings.gemini_api_key:
+        print("⚠️  Skipping: Gemini API key not configured")
         return
     
     from agent_games_design.agents import AssetGenerator
     from agent_games_design.state import AssetRequest, AssetType, ModelType
     
     print(f"\n{'='*80}")
-    print("Testing Asset Generation (DALL-E 3)")
+    print("Testing Asset Generation (Gemini 3 Pro)")
     print(f"{'='*80}\n")
     
     generator = AssetGenerator()
@@ -276,7 +291,7 @@ async def test_asset_generation_only():
         style_requirements=["pixel art", "vibrant", "game style"],
         technical_specs={"resolution": "1024x1024", "format": "PNG"},
         reference_images=[],
-        target_model=ModelType.DALLE_3
+        target_model=ModelType.GEMINI_3_PRO
     )
     
     print(f"Request: {request.title}")
@@ -285,7 +300,7 @@ async def test_asset_generation_only():
     print(f"Description: {request.description}\n")
     
     # Generate asset
-    print("Generating asset with DALL-E 3...")
+    print("Generating asset with Gemini 3 Pro...")
     assets = generator.generate_assets([request])
     
     assert len(assets) == 1, "Should generate one asset"
@@ -299,28 +314,44 @@ async def test_asset_generation_only():
     print(f"Success: {asset.image_url is not None}")
     
     if asset.image_url:
-        print(f"Image URL: {asset.image_url}")
+        print(f"Image Path: {asset.image_url}")
         print(f"Quality Score: {asset.quality_score}")
         print(f"Generated Prompt: {asset.generated_prompt[:100]}...")
+        
+        # Verify image file exists
+        image_path = Path(asset.image_url)
+        if image_path.exists():
+            print(f"Image file size: {image_path.stat().st_size} bytes")
     else:
         print(f"Error: {asset.metadata.get('error', 'Unknown error')}")
     
-    # Verify DALL-E 3 was used
-    assert asset.model_used == ModelType.DALLE_3, (
-        f"Should use DALL-E 3, got {asset.model_used}"
+    # Verify Gemini 3 Pro was used
+    assert asset.model_used == ModelType.GEMINI_3_PRO, (
+        f"Should use Gemini 3 Pro, got {asset.model_used}"
     )
     
     # Verify image was generated
-    assert asset.image_url is not None, "Should have image URL"
-    assert asset.image_url.startswith('http'), "Should have valid HTTP URL"
+    assert asset.image_url is not None, "Should have image path"
+    
+    # Verify image file exists (Gemini saves locally)
+    image_path = Path(asset.image_url)
+    assert image_path.exists(), f"Image file should exist: {image_path}"
     
     # Verify metadata
     assert asset.metadata is not None, "Should have metadata"
     assert 'timestamp' in asset.metadata, "Should have timestamp"
+    assert 'model' in asset.metadata, "Should have model info"
+    assert asset.metadata['model'] == 'gemini-3-pro-image-preview', "Should use correct model"
     
     print(f"\n{'='*80}")
     print("✅ ASSET GENERATION TEST PASSED!")
     print(f"{'='*80}\n")
+
+
+# Legacy alias for backward compatibility
+async def test_complete_workflow_with_dalle3():
+    """Legacy test name - now uses Gemini 3 Pro."""
+    await test_complete_workflow_with_gemini()
 
 
 if __name__ == "__main__":
@@ -328,16 +359,21 @@ if __name__ == "__main__":
     print(" RUNNING COMPREHENSIVE WORKFLOW TESTS")
     print("="*80 + "\n")
     
-    # Check API key
+    # Check API keys
     if not settings.openai_api_key or settings.openai_api_key == "your-api-key-here":
         print("❌ ERROR: OpenAI API key not configured!")
         print("Please set OPENAI_API_KEY in your .env file")
         exit(1)
     
+    if not settings.gemini_api_key:
+        print("⚠️  WARNING: Gemini API key not configured!")
+        print("Asset generation tests will be skipped.")
+        print("Set GEMINI_API_KEY in your .env file for full testing.\n")
+    
     # Run tests
     try:
         print("\n1. Testing Complete Workflow...")
-        asyncio.run(test_complete_workflow_with_dalle3())
+        asyncio.run(test_complete_workflow_with_gemini())
         
         print("\n2. Testing Workflow Stages...")
         asyncio.run(test_workflow_stages())
@@ -354,4 +390,3 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         exit(1)
-
