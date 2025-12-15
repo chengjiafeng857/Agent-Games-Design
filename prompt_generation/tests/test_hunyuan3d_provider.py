@@ -52,6 +52,33 @@ class TestTC3Signature:
         assert headers["X-TC-Timestamp"] == "1700000000"
 
 
+class TestViewImage:
+    """Tests for ViewImage class."""
+    
+    def test_to_api_dict(self):
+        """Test conversion to API parameters."""
+        from src.providers.hunyuan3d_provider import ViewImage
+        
+        view_img = ViewImage(view="left", image_url="https://example.com/left.png")
+        api_dict = view_img.to_api_dict()
+        
+        # Verify keys match the new API requirement
+        assert "ViewType" in api_dict
+        assert "ViewImageUrl" in api_dict
+        assert "View" not in api_dict
+        assert "ImageUrl" not in api_dict
+        
+        assert api_dict["ViewType"] == "left"
+        assert api_dict["ViewImageUrl"] == "https://example.com/left.png"
+
+    def test_invalid_view(self):
+        """Test validation of view type."""
+        from src.providers.hunyuan3d_provider import ViewImage
+        
+        with pytest.raises(ValueError) as exc_info:
+            ViewImage(view="invalid", image_url="http://example.com")
+        
+        assert "Invalid view type" in str(exc_info.value)
 class TestRawHttpHunyuan3DProvider:
     """Tests for the raw HTTP Hunyuan 3D provider."""
     

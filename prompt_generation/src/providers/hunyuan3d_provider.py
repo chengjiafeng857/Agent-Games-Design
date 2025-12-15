@@ -57,8 +57,8 @@ class ViewImage:
         - ImageUrl: URL of the image
         """
         return {
-            "View": self.view,  # API uses View, not ViewType
-            "ImageUrl": self.image_url,
+            "ViewType": self.view,  # API uses ViewType, not View
+            "ViewImageUrl": self.image_url,  # API uses ViewImageUrl, not ImageUrl
         }
 
 

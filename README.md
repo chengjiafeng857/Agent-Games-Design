@@ -1,364 +1,271 @@
 # Agent Games Design
 
-A LangGraph-based agent system for implementing detailed game execution plans, asset generation including 3d modeling, and evaluation.
+A comprehensive AI-powered game design system featuring a **5-stage character creation pipeline** (text → 2D images → PBR-ready 3D models) and a **LangGraph-based ReAct agent** for game design workflows.
 
-## 🎯 Features
+## Key Capabilities
 
-- **LangGraph Integration**: Build stateful, multi-step agent workflows
-- **GPT-5 & Responses API**: Official LangChain support for OpenAI's latest models
-- **ReAct Agent System**: Advanced reasoning and acting pattern for game design
-- **Modular Architecture**: Clean separation of concerns (agents, graphs, tools, state)
-- **GDD Parsing**: AI-powered conversion of text GDDs to structured configs
-- **AI Asset Generation**: Google Nano and multi-model support with high-quality prompts
-- **Human-in-the-Loop**: Interactive planning approval and workflow control
-- **LangSmith Evaluation**: Comprehensive workflow performance analysis
-- **Type Safety**: Full type hints and Pydantic models
-- **Code Quality**: Black, Ruff, and MyPy configured
-- **CLI Interface**: Comprehensive command-line tools
+- **Complete 2D→3D Pipeline**: From character specs to game-ready 3D models with PBR materials
+- **Hunyuan 3D Integration**: Tencent's AI 3D generation with multiple output modes
+- **Consistent Multi-View Generation**: Google Gemini generates matching front/side/back views
+- **LLM Prompt Refinement**: GPT-5/GPT-4 with web search for current AI art trends
+- **ReAct Agent System**: LangGraph-powered reasoning and acting for game design
+- **GDD Parsing**: AI-powered conversion of text documents to structured configs
+- **Human-in-the-Loop**: Interactive approval workflows
+- **LangSmith Evaluation**: Comprehensive performance analysis
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 agent-games-design/
-├── src/
-│   └── agent_games_design/
-│       ├── __init__.py
-│       ├── agents/          # Agent node definitions
-│       │   ├── planning.py       # Planning stage agent
-│       │   ├── react_executor.py # ReAct execution agent
-│       │   └── asset_generator.py # Asset generation agent
-│       ├── graphs/          # LangGraph workflow definitions
-│       │   ├── react_workflow.py # Main ReAct workflow
-│       │   ├── human_approval.py # Approval logic
-│       │   └── workflow_manager.py
-│       ├── tools/           # Tools that agents can use
-│       │   ├── game_analyzer.py
-│       │   ├── text_analyzer.py
-│       │   └── calculator.py
-│       ├── state/           # State management
-│       ├── utils/           # Utility functions
-│       ├── evaluation/      # LangSmith evaluation logic
-│       ├── cli.py           # Main CLI entry point
-│       ├── config.py        # Configuration management
-│       ├── config_generator.py # GDD parsing logic
-│       └── logging_config.py
-├── prompt_generation/       # Standalone prompt pipeline
-│   ├── configs/             # Character config templates
-│   ├── src/                 # Pipeline stages
-│   └── generate_prompts.py  # Pipeline entry point
-├── tests/                   # Test files
-├── examples/                # Example scripts
-├── docs/                    # Documentation
-├── .env.example            
-└── pyproject.toml
+├── prompt_generation/          # 5-stage character creation pipeline
+│   ├── configs/                # Character YAML specifications
+│   ├── src/
+│   │   ├── stage1_base_prompts.py    # Template-based 2D prompts
+│   │   ├── stage2_llm_refiner.py     # GPT refinement with web search
+│   │   ├── stage2_gemini_prompts.py  # Manual Gemini meta-prompts
+│   │   ├── stage3_common_prompts.py  # Checklist & design notes
+│   │   ├── stage4_image_generation.py # Gemini T-pose images
+│   │   ├── stage5_hunyuan3d.py       # 3D model generation
+│   │   ├── providers/                 # Hunyuan3D API providers
+│   │   │   ├── hunyuan3d_provider.py  # Abstract base class
+│   │   │   ├── raw_http_hunyuan3d.py  # HTTP (no SDK required)
+│   │   │   └── sdk_hunyuan3d.py       # Official SDK wrapper
+│   │   └── models.py                  # CharacterSpec dataclass
+│   ├── output/                 # Generated prompts, images, 3D models
+│   └── generate_prompts.py     # Pipeline CLI entry point
+├── src/agent_games_design/     # ReAct game design agent
+│   ├── agents/                 # Agent node definitions
+│   │   ├── planning.py         # Execution plan generation
+│   │   └── react_executor.py   # Reasoning + Acting cycles
+│   ├── graphs/                 # LangGraph workflows
+│   ├── tools/                  # Game analyzer, text analyzer, calculator
+│   ├── evaluation/             # LangSmith metrics
+│   ├── config_generator.py     # GDD → YAML conversion
+│   └── cli.py                  # Main CLI
+├── tests/
+├── examples/
+└── docs/
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- `uv` package manager ([install here](https://github.com/astral-sh/uv))
+- Python 3.11+
+- `uv` package manager ([install](https://github.com/astral-sh/uv))
 
 ### Installation
 
-1. Clone the repository:
-
 ```bash
-git clone <your-repo-url>
+git clone <repo-url>
 cd agent-games-design
-```
-
-2. Install dependencies using `uv`:
-
-```bash
 uv sync --extra dev
+cp .env.example .env  # Add your API keys
 ```
 
-3. Set up environment variables:
+### Environment Variables
 
 ```bash
-cp .env.example .env
-# Edit .env and add your API keys (OPENAI_API_KEY required)
+# Required for prompt generation pipeline
+OPENAI_API_KEY=          # Stage 2: LLM refinement
+GEMINI_API_KEY=          # Stage 4: Image generation
+TENCENT_SECRET_ID=       # Stage 5: Hunyuan 3D
+TENCENT_SECRET_KEY=      # Stage 5: Hunyuan 3D
+
+# Optional: Hunyuan 3D configuration
+HUNYUAN3D_ENABLE_PBR=true           # Enable PBR materials
+HUNYUAN3D_FACE_COUNT=500000         # Polygon count (40000-1500000)
+HUNYUAN3D_GENERATE_TYPE=Normal      # Normal|LowPoly|Geometry|Sketch
+HUNYUAN3D_POLYGON_TYPE=triangle     # triangle|quadrilateral
+
+# Optional: LangSmith evaluation
+LANGSMITH_API_KEY=
+LANGSMITH_TRACING=true
 ```
 
-### Command Line Interface
+## Character Creation Pipeline
 
-The project includes a comprehensive CLI for easy interaction:
+The 5-stage pipeline transforms character specifications into game-ready 3D assets:
+
+### Stage 1: Base Prompts
+Template-based 2D prompts from YAML character specs.
+
+### Stage 2: LLM Refinement
+GPT-powered prompt refinement with optional web search for current AI art trends.
+
+### Stage 3: Checklist & Notes
+Human-readable validation documents for T-pose requirements.
+
+### Stage 4: Image Generation
+Google Gemini generates consistent multi-view T-pose images (front, side, back). Front view is generated first, then used as reference for side/back to ensure character consistency.
+
+### Stage 5: 3D Model Generation (Hunyuan 3D)
+Converts 2D images to 3D models with PBR materials.
+
+**PBR Output Features:**
+- Physically accurate materials (albedo, normal, roughness, metallic maps)
+- Multiple generation modes: Normal, LowPoly, Geometry, Sketch
+- Configurable polygon counts (40K - 1.5M faces)
+- Multi-view input support for better reconstruction
+- Output formats: OBJ, GLB, MTL + textures
+
+### Pipeline CLI Commands
 
 ```bash
-# Get help
-uv run agent-games --help
+# Full pipeline (recommended)
+cd prompt_generation
+uv run generate_prompts.py all -i configs/my_character.yaml
 
-# interactive chat
-uv run agent-games chat
+# Individual stages
+uv run generate_prompts.py prompts -i configs/my_character.yaml    # Stage 1-3
+uv run generate_prompts.py refine -i configs/my_character.yaml --web-search  # Stage 2b
+uv run generate_prompts.py images -i configs/my_character.yaml     # Stage 4
 
-# Run ReAct workflow with a prompt file (Recommended for long GDDs)
-uv run agent-games react --file my_game_idea.txt --interactive
+# Stage 5: Hunyuan 3D generation
+uv run generate_prompts.py hunyuan3d -i configs/my_character.yaml  # From spec
+uv run generate_prompts.py hunyuan3d --image output/images/front.png  # From image
+uv run generate_prompts.py hunyuan3d --prompt "A robot character"  # From text
 
-# Run workflow to generate character spec yaml file
-uv run agent-games generate-config my_character.txt -o configs/my_character.yaml
+# Multi-view for better 3D quality
+uv run generate_prompts.py hunyuan3d --image front.png \
+    --left-view left.png --right-view right.png --back-view back.png
 ```
 
+### Character Specification Format
 
-### Running Examples
-
-**Using CLI (Recommended):**
-
-```bash
-uv run agent-games examples tools    # Tool demonstration
-uv run agent-games examples basic    # Basic agent (requires API key)
+```yaml
+# configs/my_character.yaml
+name: "Zylos"
+role: "Cybernetic Ninja"
+game_style: "Dark sci-fi with neon accents"
+silhouette: "Athletic build with angular cyber-armor plating"
+color_palette:
+  - "Matte black (primary)"
+  - "Electric blue (accents)"
+  - "Chrome silver (joints)"
+key_props:
+  - "Plasma katana sheathed on back"
+  - "Holographic visor covering eyes"
+animation_focus:
+  - "swift slashing attacks"
+  - "wall-running"
+  - "stealth crouch"
+extra_notes: "Minimalist design, exposed mechanical joints at elbows and knees"
 ```
 
-**Direct Python execution:**
+### Pipeline Output Structure
 
-```bash
-uv run python examples/basic_agent.py
-uv run python examples/tool_usage.py
-uv run python examples/advanced_agent.py
-uv run python examples/react_game_design_workflow.py  # Full ReAct demo
+```
+output/
+├── 2024-12-15_10-30-45/
+│   ├── base/                    # Stage 1 prompts
+│   ├── refined/                 # Stage 2 LLM-refined prompts
+│   ├── gemini/                  # Stage 2a meta-prompts
+│   ├── common/                  # Stage 3 checklist
+│   └── images/                  # Stage 4 T-pose images
+│       ├── zylos_tpose_front_v1.jpg
+│       ├── zylos_tpose_side_v1.jpg
+│       └── zylos_tpose_back_v1.jpg
+└── hunyuan3d/
+    └── 2024-12-15_11-00-00/
+        ├── model.obj            # 3D geometry
+        ├── material.mtl         # Material definitions
+        ├── texture_albedo.png   # PBR textures
+        ├── texture_normal.png
+        ├── preview.glb          # Preview model
+        └── metadata.json        # Job info
 ```
 
-## � Character Config Generation (New)
+## ReAct Game Design Agent
 
-The system can now parse unstructured **Game Design Documents (GDDs)** directly into structured configuration files for the prompt generation pipeline.
-
-### Workflow
-
-1. **Write GDD**: Create a text file with your character description (e.g., `my_character.txt`).
-
-   ```text
-   Name: Zylos
-   Role: Cybernetic Ninja
-   Style: Dark sci-fi, neon accents
-   Weapons: Plasma katana on back
-   ```
-
-2. **Generate Config**: Use the `generate-config` command to convert it to YAML.
-
-   ```bash
-   uv run agent-games generate-config my_character.txt -o configs/my_character.yaml
-   ```
-
-   *The AI will automatically structure the data, verify constraints, and infer missing details.*
-
-3. **Generate Prompts**: Use the generated config in the prompt pipeline.
-
-   ```bash
-   uv run prompt_generation/generate_prompts.py prompts -i configs/my_character.yaml
-   ```
-
-## 🏗️ ReAct Game Design Workflow
-
-The project includes a sophisticated **ReAct (Reasoning + Acting) agent** specifically designed for game design assignments:
+The main agent system provides AI-powered game design workflows.
 
 ### Workflow Stages
 
-1. **📋 Planning Stage**: AI creates detailed execution plans
-2. **👤 Human Approval**: Interactive plan review and approval
-3. **🤖 ReAct Execution**: Reasoning through game design challenges
-4. **🎨 Asset Generation**: AI-generated game assets with multiple models
-5. **📊 LangSmith Evaluation**: Comprehensive performance analysis
+1. **Planning**: AI creates detailed execution plans with steps, dependencies, and asset requests
+2. **Human Approval**: Interactive plan review and approval
+3. **ReAct Execution**: Reasoning through game design with Thought→Action→Observation cycles
+4. **Asset Generation**: AI-generated game assets
+5. **Evaluation**: LangSmith performance analysis
+
+### Agent CLI Commands
 
 ```bash
-# Run ReAct workflow with a prompt file (Recommended for long GDDs)
-uv run agent-games react --file my_game_idea.txt
+# Interactive chat
+uv run agent-games chat
 
-# Run ReAct workflow with inline prompt
+# ReAct workflow
 uv run agent-games react "Design a retro platformer" --interactive
+uv run agent-games react --file my_game_idea.txt --evaluate
+
+# Convert GDD to character config
+uv run agent-games generate-config my_gdd.txt -o configs/output.yaml
+
+# Run examples
+uv run agent-games examples basic
+uv run agent-games examples react
 ```
 
-### 🎨 Asset Generation Models
+### GDD to Config Workflow
 
-- **Google Nano**: Primary model for fast, efficient generation
-- **Gemini 3 Pro Preview**: High-quality AI image generation (primary model)  
-- **Midjourney**: Artistic and stylized images
-- **Stable Diffusion**: Customizable open-source generation
-- **Adobe Firefly**: Commercial-safe creative AI
+Convert unstructured game design documents to structured YAML:
 
-### 📊 Evaluation Metrics
+```bash
+# Input: my_character.txt
+# "A grizzled space marine named Marcus with heavy power armor..."
 
-- Plan Quality Score
-- ReAct Execution Performance
-- Asset Generation Quality
-- Guidelines Completeness
-- Workflow Efficiency
-- Error Handling
+uv run agent-games generate-config my_character.txt -o configs/marcus.yaml
 
-## 🏗️ Building Custom Agents
-
-For simple agents, use the basic system:
-
-### 1. Define State
-
-```python
-from typing import Annotated, TypedDict
-from langgraph.graph import add_messages
-
-class MyState(TypedDict):
-    messages: Annotated[list[BaseMessage], add_messages]
-    # Add custom fields
+# Output: Structured YAML ready for prompt pipeline
 ```
 
-### 2. Create Agent Nodes
+## Supported Models & Providers
 
-```python
-def my_agent(state: MyState) -> MyState:
-    # Your agent logic
-    return state
-```
+### LLM Models
+- **OpenAI**: GPT-5.2, GPT-5-mini, GPT-5-nano, GPT-4.1 (via Responses API)
+- **Anthropic**: Claude models (via LangChain)
 
-### 3. For Game Design Projects
+### Image Generation
+- **Google Gemini**: gemini-3-pro-image-preview (primary), gemini-2.5-flash-image
+- **FAL AI**: Integration available
 
-Use the ReAct system for comprehensive game design workflows:
+### 3D Modeling
+- **Hunyuan 3D** (Tencent Cloud):
+  - Normal: Textured geometry (default)
+  - LowPoly: Game-optimized reduced faces
+  - Geometry: White model for sculpting
+  - Sketch: Generate from line art
+  - PBR materials with physically accurate properties
 
-```python
-from agent_games_design.react_agent import ReActWorkflowManager
-
-manager = ReActWorkflowManager()
-state = manager.start_workflow("Create a strategy game")
-```
-
-## 🔧 Configuration
-
-See **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** for detailed configuration options, including:
-
-- Model selection (GPT-5, GPT-4, etc.)
-- Thinking effort control
-- Tool settings
-- Response API integration
-
-## 🧪 Testing & Quality
+## Development
 
 ```bash
 # Run tests
 uv run pytest
 
-# Format code
-uv run black src/
-uv run ruff check src/
+# Code quality
+uv run black src/ prompt_generation/
+uv run ruff check src/ prompt_generation/
 uv run mypy src/
-```
 
-## 📚 Key Concepts
-
-### LangGraph
-
-LangGraph is a library for building stateful, multi-actor applications with LLMs. Key concepts:
-
-- **State**: Shared data structure passed between nodes
-- **Nodes**: Individual processing steps (agents, tools, etc.)
-- **Edges**: Connections between nodes
-- **Graphs**: Complete workflow definition
-
-### Agent State
-
-The `AgentState` is the shared state that flows through your graph:
-
-- `messages`: Conversation history (automatically merged)
-- `current_task`: The current task being worked on
-- `iterations`: Track how many times the agent has run
-- `final_output`: The final result
-
-### Checkpointing
-
-LangGraph supports saving and resuming agent state, useful for:
-
-- Long-running processes
-- Error recovery
-- Human-in-the-loop workflows
-
-## 🛠️ Development
-
-### Adding Dependencies
-
-Add a new dependency:
-
-```bash
+# Add dependencies
 uv add package-name
+uv add --dev dev-package-name
 ```
 
-Add a dev dependency:
-
-```bash
-uv add --dev package-name
-```
-
-### Project Management
-
-Update dependencies:
-
-```bash
-uv lock
-```
-
-Sync environment with lockfile:
-
-```bash
-uv sync
-```
-
-### Docker Support
-
-Build and run with Docker:
-
-```bash
-# Build image
-docker build -t agent-games-design .
-
-# Run with docker-compose
-docker-compose up agent-games
-
-# Development mode with hot reloading
-docker-compose up dev
-```
-
-### Continuous Integration
-
-The project includes GitHub Actions for:
-
-- **Testing**: Automated test runs on Python 3.11 and 3.12
-- **Code Quality**: Linting with Ruff, formatting with Black, type checking with MyPy
-- **Security**: Safety checks for known vulnerabilities
-- **Coverage**: Code coverage reporting with Codecov
-
-### CLI Development
-
-The CLI is defined in `src/agent_games_design/cli.py` and provides:
-
-- Interactive chat sessions
-- Single query execution  
-- Tool listing and usage
-- Example scenarios
-- Configurable logging
-
-## � Resources
+## Documentation
 
 - [Configuration Guide](docs/CONFIGURATION.md)
-- [GPT-5 Responses API](docs/GPT5_RESPONSES_API.md)
 - [Asset Generation](docs/ASSET_GENERATION.md)
+- [GPT-5 Responses API](docs/GPT5_RESPONSES_API.md)
+- [Consistent Multi-View Generation](prompt_generation/docs/CONSISTENT_VIEWS.md)
 
 ### External Resources
 
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
-- [LangChain Documentation](https://python.langchain.com/)
-- [UV Documentation](https://github.com/astral-sh/uv)
-- [LangSmith](https://smith.langchain.com/)
+- [Hunyuan 3D API](https://cloud.tencent.com/document/product/1729)
+- [Google Gemini](https://ai.google.dev/)
 
-## 🤝 Contributing
+## License
 
-Contributions are welcome! Please follow the code quality standards (Black, Ruff, MyPy) and add tests for new features.
-
-## 📝 License
-
-MIT License - feel free to use this project for your own purposes.
-
-## 🙏 Acknowledgments
-
-- Built with [LangGraph](https://github.com/langchain-ai/langgraph)
-- Package management by [uv](https://github.com/astral-sh/uv)
-- Powered by [LangChain](https://github.com/langchain-ai/langchain)
-
----
-
-**Happy Agent Building! 🤖**
+MIT License
