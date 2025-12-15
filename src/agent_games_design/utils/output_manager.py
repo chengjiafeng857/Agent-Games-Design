@@ -215,6 +215,16 @@ class OutputManager:
         lines.append(f"---")
         lines.append(f"")
         
+        # Character List
+        if state.character_list:
+            lines.append(f"## 👥 Character List")
+            lines.append(f"")
+            for char in state.character_list:
+                lines.append(f"* **{char.name}**: {char.description}")
+            lines.append(f"")
+            lines.append(f"---")
+            lines.append(f"")
+
         # Execution Plan
         if state.execution_plan:
             lines.append(f"## 📋 Execution Plan")

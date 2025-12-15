@@ -13,6 +13,7 @@ from .react_state import (
     GameDesignAsset,
     ReActObservation,
     ReActState,
+    CharacterInfo,
 )
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "GameDesignAsset",
     "ReActObservation",
     "ReActState",
+    "CharacterInfo",
 ]

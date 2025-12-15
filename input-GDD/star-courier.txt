@@ -1,0 +1,133 @@
+Starlight Courier — Game Design Document (GDD)
+Game Type: 2.5D narrative action‑adventure with light stealth and traversal
+Elevator Pitch: A cozy‑tense courier adventure set in a neon, rain‑soaked harbor city at blue hour. As Aya—
+with her chatty drone Kilo—you weave through night‑market alleys, outrun corp patrols, and deliver sealed
+holographic parcels that change the lives of the people you meet.
+1) Vision & Player Experience
+Experience Goals - Flow: satisfyingly snappy traversal with readable turns on wet streets. - Tension → Relief:
+moments of stealthy evasion punctuated by safehouse warmth. - Cohesion: consistent cel‑shaded look, teal/
+magenta/amber palette, blue‑hour rain. - Agency: route choice tradeoffs (fast/dangerous vs safe/slow)
+matter.
+Design Pillars 1) Readability First — clean silhouettes, clear HUD, navigable paths. 2) Deliveries Have
+Stories — parcels nudge micro‑narratives forward. 3) Rain Is a Mechanic — visibility, traction, sound, and
+cover all shift with rain. 4) Lightweight Stealth — detection cones, audio/noise, quick resets.
+Target Platforms / Audience - PC (keyboard/mouse & controller). Stretch: Steam Deck. - Players who enjoy
+traversal, light stealth, and episodic micro‑stories.
+2) Narrative & World
+Setting: Port‑city sprawl of Aurelia Harbor, packed night markets, cranes, rain haze, paper lanterns,
+holograms.
+Main Cast - Aya — nimble courier; compassionate, competent, a bit impulsive. - Kilo — small companion
+drone; maps, quips, pings threats. - Factions — street vendors, dockers’ union, corp security, neighborhood
+fixers.
+Theme: connection under surveillance. Deliveries are trust‑building acts.
+Story Frame: Each shift is a linked set of deliveries. Small choices (who gets priority, which alley you risk)
+ripple into later missions via Reputation and Rumors.
+3) Core Loop & Meta Loop
+Minute‑to‑Minute (Core Loop) 1) Accept a delivery → 2) Plan a route → 3) Ride/Run → 4) Evade patrols &
+hazards → 5) Deliver → 6) Score & Reputation → 7) Upgrade → 8) Next job.
+Session Meta: complete 3–5 deliveries per shift; unlock new districts, rumors, and upgrades; meet a
+character; optional story beat.
+4) Systems Design
+4.1 Traversal (On Foot & Mag‑Bike)
+Speed (m/s): walk 3.5, jog 5.0; bike cruise 9.0, boost 13.0 (2 s burst).
+Acceleration: bike 0.0→cruise in 1.0 s; drift on wet bricks reduces turning radius by 15%.
+Traction: rain intensity applies −10/−20/−30% traction tiers; puddles add slip chance (camera shake
+micro‑feedback).
+Stamina: sprint drains; recover in cover/under awnings (+25% regen).
+Boost: consumes Battery; recharges slowly; can be recharged at kiosks.
+4.2 Parcels
+Each parcel has Integrity and Priority. Integrity decays on collisions; Priority controls time bonus.
+Integrity Loss: minor bump −2, heavy collision −12, patrol tackle −25.
+Scoring Multiplier: Fragile ×1.2; Time‑Sensitive ×1.3; Secure ×1.4.
+4.3 Stealth & Detection
+Patrol Vision Cone: 55°/8 m; rain/fog reduce to 35°/6 m.
+Noise: sprint +10 noise; bike boost +18; walking +2; rain −6 global.
+Concealment: stalls/awnings reduce visibility by 40%; shadows by 20%.
+Kilo Ping: one‑shot sonar revealing patrols within 12 m, 20 s cooldown.
+AI States: Patrol → Investigate (heard/seen hint) → Pursue → Search → Return.
+Break LOS: 3 s plus enter cover to reset.
+4.4 Weather & World Modifiers
+Rain Intensity: Drizzle / Rain / Downpour influences traction, noise masking, fog density, puddle
+spawn.
+Wind Gusts: rare; push bike sideways; used for variety set‑pieces.
+4.5 Reputation & Progression
+Reputation ranks: Rookie → Runner → Courier → Express → Phantom. - Rank raises payout multiplier
+(+0%, +5%, +10%, +15%, +20%). - Unlocks Rumor Jobs (branching micro‑stories) and shop inventory.
+4.6 Economy & Upgrades
+Currency: Creds.
+Shops: Night‑market stalls & garage.
+Category Examples Effect
+Bike Mods Hover Rim MkII, Dampers+, Regen Coil speed/traction/battery
+Courier Gear Grip gloves, knee pads, reflective coat handling/damage resist
+Drone Rigs Wide‑cone sonar, threat highlighter, path laser detection/utility
+5) Controls & Camera
+Keyboard/Mouse (PC) - Move: WASD • Sprint: Shift • Interact/Deliver: E • Boost: Space • Kilo Ping: Q • Bike/
+On‑foot Toggle: F • Map/Route: M • Pause: Esc.
+Controller (Xbox/PS Layout) - Left Stick Move • B/Circle Sprint • X/Square Interact • A/Cross Boost • Y/
+Triangle Bike Toggle • LB/L1 Kilo Ping • View/Touchpad Map • Menu/Pause.
+Camera: 2.5D side camera with slight parallax; dynamic zoom (1.0–1.2×) on speed/encounter; vignette in
+downpour.
+6) Levels & Encounters
+Districts (act as hubs) 1) Harbor Night Market — tutorial routes, puddles, lanterns.
+2) Crane Yards — moving hazards, wind gusts, tighter patrol corridors.
+3) Old Canals — bridges, slick stone, shortcuts via locks.
+4) Corporate Promenade — high surveillance, faster rewards.
+Encounter Palette - Patrol duo on fixed loop; stall collision hazard; puddle cluster; rumor NPC; drone
+jammers (disable ping briefly).
+Example Route Beat (Harbor Alley) - Start kiosk → lantern gauntlet (visibility shifts) → patrol loop (hide
+under awning) → puddle s‑curve (traction test) → delivery balcony.
+7) Missions & Templates
+Standard Delivery: get parcel A to B intact.
+Timed Express: reach before deadline; bonus if >20 s left.
+Fragile Run: integrity ≥90%.
+Covert Drop: secret stash; patrol density +1 tier.
+Chain Run: 3 sequential drops within one shift.
+Score = rewardBase * multipliers + timeBonus + integrityBonus + reputationTierBonus
+8) UI/UX
+HUD: health/stamina, parcel integrity, minimap ping, stealth indicator (eye icon with fill), timer when
+active.
+Wayfinding: diegetic holographic sign pulses subtly along target route; optional breadcrumb dots.
+Menus: job board → route planner; garage → upgrades; codex → rumors, people, places.
+Accessibility: UI scale 80–140%; colorblind‑safe HUD set; aim/steer assist; hold‑to‑deliver toggle;
+subtitle size/black bars.
+9) Audio Direction
+Music: lo‑fi synth with rain foley layers; stingers for patrol aggro/escape.
+SFX: bike hover hum, puddle splash, fabric rustle, Kilo chirps.
+Mix Rules: duck music −6 dB on aggro; boost rain mask in downpour; raise Kilo VO clarity.
+10) Art Direction (Quick Ref)
+Cel‑shaded, painterly edge; teal/magenta/amber; soft volumetric glow; crisp silhouettes.
+Environments exported in Foreground/Mid/Background layers for parallax.
+Keep top corners clean for HUD; left‑to‑right leading lines.
+11) Technical & Pipeline
+Engine: Unity 2022+ (Unreal 5.x compatible).
+Performance Targets: 60 FPS @ 1080p, mid‑range laptop; texture memory budget ≤ 800 MB; draw calls ≤
+1.2k per scene.
+Asset Pipeline 1) Ideation: ChatGPT/Claude brainstorming → prompt drafts.
+2) Generation: Midjourney v6 / SDXL / DALL·E per asset spec.
+3) Cleanup: inpaint artifacts; upscale (ESRGAN/Topaz).
+4) Engine Prep: slice sprites; set PPU; import rules (BC7/ASTC); parallax layers.
+5) Grade: LUT application; post‑process volume.
+12) Difficulty & Tuning
+Modes: Story / Standard / Courier+ (hard).
+Patrol cone +10%/+0%/−10%; integrity loss −30%/0%/+30%; deadlines +30%/0%/−20%.
+Assist toggles: aim/steer assist, extended aggro break, slow‑mo on near miss (10%).
+13) Production Plan (Vertical Slice → Alpha)
+Team Roles: design/program (1), art (1), tech art (shared), audio (contract), QA (part‑time).
+Milestones (6 weeks) - Wk 1: core movement, camera, HUD shell, Harbor Alley blockout.
+- Wk 2: parcel system + timer, basic patrol AI, rain v1, delivery loop.
+- Wk 3: mag‑bike handling, Kilo ping, shop stub, two upgrades.
+- Wk 4: polish art pass (parallax), mech poster + T‑pose, SFX/Music temp.
+- Wk 5: tuning pass, accessibility, save/load, telemetry hooks.
+- Wk 6: UX polish, performance, playtest, bug triage → Vertical Slice.
+Definition of Done (VS): 3 deliveries playable end‑to‑end; 1 district; 2 patrol types; shop with 3 upgrades;
+controller support; 60 FPS on mid‑range.
+14) QA & Playtesting
+Heuristics: clarity of route, fairness of patrol telegraphing, rain readability.
+Playtests: 5‑minute loops; track fail reasons; A/B route readability (sign glow off/on).
+KPIs: avg deliveries/shift ≥3.5; fail→retry under 20 s; players choose high‑risk path ≥30% of time.
+15) Risks & Mitigations
+Art Consistency Drift → lock seeds/palettes; brief paint‑over pass.
+Stealth Frustration → fast resets; generous concealment in rain; audio telegraph.
+Performance in Downpour → particle LOD & GPU instancing; cap puddle decals.
+16) Roadmap (Post‑VS)
+District 2 (Crane Yards), patrol archetype B, 5–8 new deliveries, new upgrade tier, rumor chain #1.

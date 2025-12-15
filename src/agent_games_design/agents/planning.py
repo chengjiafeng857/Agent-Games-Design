@@ -14,7 +14,8 @@ from ..state import (
     AssetRequest, 
     WorkflowStage, 
     AssetType, 
-    ModelType
+    ModelType,
+    CharacterInfo
 )
 
 
@@ -71,10 +72,12 @@ class PlanningAgent:
             if plan_data:
                 execution_plan = self._parse_plan_steps(plan_data.get("plan_steps", []))
                 asset_requests = self._parse_asset_requests(plan_data.get("asset_requests", []))
+                character_list = self._parse_character_list(plan_data.get("character_list", []))
 
                 # Update state
                 state.execution_plan = execution_plan
                 state.asset_requests = asset_requests
+                state.character_list = character_list
                 state.current_stage = WorkflowStage.HUMAN_APPROVAL
                 state.messages.append(response)
             else:
@@ -100,10 +103,19 @@ CRITICAL: You MUST respond with ONLY valid JSON. No explanations, no markdown, n
 INSTRUCTIONS:
 1. Analyze the user's game design request thoroughly
 2. Break down the work into logical, sequential steps
-3. Identify all assets that need to be generated
-4. Provide detailed specifications for each asset
-5. Consider dependencies between tasks
-6. Estimate realistic timeframes
+3. Identify all key characters in the game concept
+4. Identify all assets that need to be generated
+5. Provide detailed specifications for each asset
+6. Consider dependencies between tasks
+7. Estimate realistic timeframes
+
+ASSET GENERATION RULES (CRITICAL):
+1. **Character Assets**: Should be 'character_concept' or 'mock-up' style. Focus on personality, pose, and design.
+2. **Non-Character Assets (Environment, Props, UI)**: MUST be "production-ready" texture assets.
+   - Do NOT generate random concept art or mock-ups for these unless specifically asked for 'concept'.
+   - Include maps: Diffuse/Albedo, Normal, Roughness/Metallic, Ambient Occlusion where applicable.
+   - For UI, specify "production-ready UI element" or "sprite sheet".
+   - For Environment, specify "seamless texture", "material", or "HDRI" as appropriate.
 
 RESPONSE FORMAT - Return ONLY this JSON structure (no markdown, no code blocks):
 {
@@ -119,17 +131,24 @@ RESPONSE FORMAT - Return ONLY this JSON structure (no markdown, no code blocks):
             "priority": 1-5
         }
     ],
+    "character_list": [
+        {
+            "name": "Character Name",
+            "description": "Brief description of role and personality"
+        }
+    ],
     "asset_requests": [
         {
             "asset_id": "unique_id",
             "asset_type": "character_concept|environment_art|ui_mockup|game_logo|icon_set|texture|sprite|background|promotional_art",
             "title": "Asset Name",
-            "description": "Detailed asset description", 
+            "description": "Detailed asset description. For non-characters, specify PBR maps needed.", 
             "style_requirements": ["requirement1", "requirement2"],
             "technical_specs": {
                 "resolution": "1024x1024",
                 "format": "PNG",
-                "style": "pixel art"
+                "style": "pixel art",
+                "maps": ["diffuse", "normal", "roughness"]
             },
             "reference_images": ["description1", "description2"],
             "target_model": "google_nano|dalle_3|midjourney|stable_diffusion|firefly"
@@ -138,14 +157,14 @@ RESPONSE FORMAT - Return ONLY this JSON structure (no markdown, no code blocks):
 }
 
 ASSET TYPES AVAILABLE:
-- character_concept: Character designs and concept art
-- environment_art: Backgrounds, scenes, locations
-- ui_mockup: User interface designs
-- game_logo: Game titles and logos
-- icon_set: UI icons and symbols
-- texture: Surface textures and materials
-- sprite: Game sprites and animations
-- background: Background images
+- character_concept: Character designs and concept art (Mock-ups OK)
+- environment_art: Production-ready environment assets (textures, materials, backgrounds) - NO MOCKUPS
+- ui_element: Production-ready UI elements/sprites - NO GENERIC MOCKUPS
+- game_logo: Production-ready Game titles and logos
+- icon_set: Production-ready UI icons and symbols
+- texture: Seamless surface textures and materials
+- sprite-sheet: Game sprites and animations (production-ready sheets)
+- background: High-resolution background images
 - promotional_art: Marketing and promotional images
 
 MODELS AVAILABLE (in priority order):
@@ -321,6 +340,21 @@ Focus on creating high-quality, production-ready game design materials.
                 continue
 
         return requests
+
+    def _parse_character_list(self, character_data: List[dict]) -> List[CharacterInfo]:
+        """Parse character list from JSON response."""
+        characters = []
+        for char_data in character_data:
+            try:
+                character = CharacterInfo(
+                    name=char_data.get("name", "Unknown Character"),
+                    description=char_data.get("description", "No description provided")
+                )
+                characters.append(character)
+            except Exception:
+                continue
+        
+        return characters
 
     def _create_fallback_plan(self, user_prompt: str) -> List[PlanStep]:
         """Create a basic fallback plan if parsing fails."""

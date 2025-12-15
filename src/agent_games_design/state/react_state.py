@@ -21,6 +21,13 @@ class PlanStep(BaseModel):
     priority: int = Field(ge=1, le=5, description="Priority level (1=highest, 5=lowest)")
 
 
+class CharacterInfo(BaseModel):
+    """Information about a character in the game."""
+
+    name: str = Field(description="Name of the character")
+    description: str = Field(description="Brief description of the character")
+
+
 class AssetRequest(BaseModel):
     """Request for generating a specific asset."""
 
@@ -82,6 +89,9 @@ class ReActState(BaseModel):
     current_thought: Optional[str] = Field(default=None, description="Current reasoning thought")
     guidelines_generated: Optional[str] = Field(
         default=None, description="Generated step-by-step guidelines"
+    )
+    character_list: List[CharacterInfo] = Field(
+        default=[], description="List of characters identified in the design"
     )
 
     # Asset generation

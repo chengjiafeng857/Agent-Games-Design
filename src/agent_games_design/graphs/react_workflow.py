@@ -30,6 +30,7 @@ def create_react_workflow():
             "current_stage": updated_state.current_stage,
             "execution_plan": updated_state.execution_plan,
             "asset_requests": updated_state.asset_requests,
+            "character_list": updated_state.character_list,
             "messages": updated_state.messages,
             "errors": updated_state.errors,
         }

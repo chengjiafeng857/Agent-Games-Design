@@ -1,6 +1,6 @@
 # Agent Games Design
 
-A LangGraph-based agent system for implementing detailed game execution plans, asset generation including 3d modeling, and evaluation. 
+A LangGraph-based agent system for implementing detailed game execution plans, asset generation including 3d modeling, and evaluation.
 
 ## 🎯 Features
 
@@ -63,17 +63,20 @@ agent-games-design/
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repo-url>
 cd agent-games-design
 ```
 
 2. Install dependencies using `uv`:
+
 ```bash
 uv sync --extra dev
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env
 # Edit .env and add your API keys (OPENAI_API_KEY required)
@@ -91,18 +94,20 @@ uv run agent-games --help
 uv run agent-games chat
 
 # Run ReAct workflow with a prompt file (Recommended for long GDDs)
-uv run agent-games react --file my_game_idea.txt
+uv run agent-games react --file my_game_idea.txt --interactive
 ```
 
 ### Running Examples
 
 **Using CLI (Recommended):**
+
 ```bash
 uv run agent-games examples tools    # Tool demonstration
 uv run agent-games examples basic    # Basic agent (requires API key)
 ```
 
 **Direct Python execution:**
+
 ```bash
 uv run python examples/basic_agent.py
 uv run python examples/tool_usage.py
@@ -117,6 +122,7 @@ The system can now parse unstructured **Game Design Documents (GDDs)** directly 
 ### Workflow
 
 1. **Write GDD**: Create a text file with your character description (e.g., `my_character.txt`).
+
    ```text
    Name: Zylos
    Role: Cybernetic Ninja
@@ -125,12 +131,15 @@ The system can now parse unstructured **Game Design Documents (GDDs)** directly 
    ```
 
 2. **Generate Config**: Use the `generate-config` command to convert it to YAML.
+
    ```bash
    uv run agent-games generate-config my_character.txt -o configs/my_character.yaml
    ```
+
    *The AI will automatically structure the data, verify constraints, and infer missing details.*
 
 3. **Generate Prompts**: Use the generated config in the prompt pipeline.
+
    ```bash
    uv run prompt_generation/generate_prompts.py prompts -i configs/my_character.yaml
    ```
@@ -140,6 +149,7 @@ The system can now parse unstructured **Game Design Documents (GDDs)** directly 
 The project includes a sophisticated **ReAct (Reasoning + Acting) agent** specifically designed for game design assignments:
 
 ### Workflow Stages
+
 1. **📋 Planning Stage**: AI creates detailed execution plans
 2. **👤 Human Approval**: Interactive plan review and approval
 3. **🤖 ReAct Execution**: Reasoning through game design challenges
@@ -208,6 +218,7 @@ state = manager.start_workflow("Create a strategy game")
 ## 🔧 Configuration
 
 See **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** for detailed configuration options, including:
+
 - Model selection (GPT-5, GPT-4, etc.)
 - Thinking effort control
 - Tool settings
@@ -228,6 +239,7 @@ uv run mypy src/
 ## 📚 Key Concepts
 
 ### LangGraph
+
 LangGraph is a library for building stateful, multi-actor applications with LLMs. Key concepts:
 
 - **State**: Shared data structure passed between nodes
@@ -236,14 +248,18 @@ LangGraph is a library for building stateful, multi-actor applications with LLMs
 - **Graphs**: Complete workflow definition
 
 ### Agent State
+
 The `AgentState` is the shared state that flows through your graph:
+
 - `messages`: Conversation history (automatically merged)
 - `current_task`: The current task being worked on
 - `iterations`: Track how many times the agent has run
 - `final_output`: The final result
 
 ### Checkpointing
+
 LangGraph supports saving and resuming agent state, useful for:
+
 - Long-running processes
 - Error recovery
 - Human-in-the-loop workflows
@@ -253,11 +269,13 @@ LangGraph supports saving and resuming agent state, useful for:
 ### Adding Dependencies
 
 Add a new dependency:
+
 ```bash
 uv add package-name
 ```
 
 Add a dev dependency:
+
 ```bash
 uv add --dev package-name
 ```
@@ -265,11 +283,13 @@ uv add --dev package-name
 ### Project Management
 
 Update dependencies:
+
 ```bash
 uv lock
 ```
 
 Sync environment with lockfile:
+
 ```bash
 uv sync
 ```
@@ -277,6 +297,7 @@ uv sync
 ### Docker Support
 
 Build and run with Docker:
+
 ```bash
 # Build image
 docker build -t agent-games-design .
@@ -291,6 +312,7 @@ docker-compose up dev
 ### Continuous Integration
 
 The project includes GitHub Actions for:
+
 - **Testing**: Automated test runs on Python 3.11 and 3.12
 - **Code Quality**: Linting with Ruff, formatting with Black, type checking with MyPy
 - **Security**: Safety checks for known vulnerabilities
@@ -299,6 +321,7 @@ The project includes GitHub Actions for:
 ### CLI Development
 
 The CLI is defined in `src/agent_games_design/cli.py` and provides:
+
 - Interactive chat sessions
 - Single query execution  
 - Tool listing and usage
