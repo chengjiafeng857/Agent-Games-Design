@@ -1,6 +1,6 @@
 # AI Character Prompt Generator
 
-A clean, teachable Python CLI tool that generates structured text prompts for the **2D → 3D character pipeline**.
+A clean, robust Python CLI tool that generates 3D model for Game character**.
 
 ## Pipeline Overview
 
@@ -29,6 +29,9 @@ uv sync
 # Set up API keys (copy template and edit)
 cp .env.example .env
 # Edit .env and add your API keys
+
+#run it all
+uv run generate_prompts.py all -i configs/aethel.yaml
 
 # Generate static prompts (Stages 1, 2a, 3) - no API key needed
 uv run generate_prompts.py prompts -i configs/aethel.yaml
