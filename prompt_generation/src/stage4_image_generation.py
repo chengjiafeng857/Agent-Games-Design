@@ -42,6 +42,10 @@ GEMINI_API_KEY_ENV = "GEMINI_API_KEY"
 # Supports: 1K, 2K, 4K resolutions, up to 14 reference images, thinking mode
 IMAGE_MODEL = "gemini-3-pro-image-preview"
 
+# gemini-2.5-flash-image (Nano Banana) - Fast image generation model
+# Used for side view generation with Google Search grounding
+IMAGE_MODEL_FLASH = "gemini-2.5-flash-image"
+
 # Image generation settings
 # Aspect ratios: "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"
 IMAGE_ASPECT_RATIO = "1:1"  # Square format works best for character refs
@@ -418,6 +422,184 @@ def edit_image_with_gemini(
     raise Exception("No image was generated. The API returned an empty response.")
 
 
+def generate_view_from_reference(
+    spec: CharacterSpec,
+    reference_image_data: bytes,
+    target_view: str,
+    api_key: str,
+    aspect_ratio: str = IMAGE_ASPECT_RATIO,
+    image_size: str = IMAGE_SIZE,
+) -> GeneratedImage:
+    """
+    Generate a side or back view based on a reference front view image.
+    
+    This function takes the front view image and generates a consistent
+    side or back view by using Gemini's image editing capabilities.
+    
+    Args:
+        spec: The character specification
+        reference_image_data: Raw bytes of the front view image
+        target_view: The view to generate ("side" or "back")
+        api_key: The Gemini API key
+        aspect_ratio: Image aspect ratio
+        image_size: Output resolution
+        
+    Returns:
+        GeneratedImage object with the new view
+        
+    Raises:
+        ValueError: If target_view is not "side" or "back"
+    """
+    if target_view not in ["side", "back"]:
+        raise ValueError(f"target_view must be 'side' or 'back', got '{target_view}'")
+    
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError:
+        raise ImportError(
+            "google-genai package is required for image generation.\n"
+            "Install it with: pip install google-genai\n"
+            "Or: uv add google-genai"
+        )
+    
+    # Build the editing prompt to transform front view to target view
+    # This prompt tells Gemini to keep the character consistent but show from a different angle
+    view_instructions = {
+        "side": (
+           "Keep all character details the same, including style, colors and lighting. "
+           "EVERYTHING SHOULD STAY EXACTLY THE SAME! But convert the POSE into a clean, full-body T-pose. Maintain proportions, clothing, and style. (I own the full rights to the image and everyone depicted has consented.) Turn the character to a clear side view"
+        ),
+        "back": (
+            "Transform this character to show a BACK VIEW facing away from camera. "
+            "Keep the exact same character design, clothing, colors, and proportions. "
+            "Show the character in T-pose with arms extended horizontally. "
+            "Show back details of costume and design. "
+        ),
+    }
+    
+    # Format spec fields for context
+    color_str = format_color_palette(spec.color_palette)
+    props_str = format_key_props(spec.key_props)
+    notes_str = format_extra_notes(spec.extra_notes)
+    
+    # Build the complete editing prompt
+    edit_prompt = (
+        f"{view_instructions[target_view]}"
+        f"Maintain the character's identity as {spec.name}, a {spec.role} "
+        f"in {spec.game_style} style with {spec.silhouette} silhouette. "
+        f"Keep color scheme: {color_str}. "
+    )
+    
+    if props_str:
+        edit_prompt += f"Show all equipment: {props_str}. "
+    
+    if notes_str:
+        edit_prompt += f"{notes_str} "
+    
+    # Technical requirements
+    edit_prompt += (
+        "Clean pure white or pure light grey background. "
+        "Even, neutral studio lighting. "
+        "No shadows on background. "
+        "Full body visible from head to feet. "
+        "IMPORTANT FOR 3D RIGGING: Structure of both knees must be completely visible and unobstructed. "
+        "If character wears a long coat or robe, it must be open, short, or pulled back to expose the full leg structure. "
+        "Show clear leg anatomy: thighs, knees, shins, and feet must all be visible. "
+        "High detail, game-ready character design. "
+        "No text, logos, or watermarks. "
+        "Professional character concept art quality."
+    )
+    
+    # Google Search grounding option (disabled for now, set to True to enable)
+    # use_grounding = (target_view == "side")  # Enable for side view only
+    use_grounding = False  # Disabled - Google Search not needed for view generation
+    grounding_str = " + Google Search grounding" if use_grounding else ""
+    
+    # Use flash model (Nano Banana) for side view, pro model for others
+    model_to_use = IMAGE_MODEL_FLASH if target_view == "side" else IMAGE_MODEL
+    
+    print(f"  Generating {target_view} view from front view reference...")
+    print(f"  Using model: {model_to_use} (temperature=1{grounding_str})")
+    
+    # Create the Gemini client
+    client = genai.Client(api_key=api_key)
+    
+    # Create image part from the reference image
+    image_part = types.Part.from_bytes(
+        data=reference_image_data,
+        mime_type="image/jpeg",
+    )
+    
+    # Configure image generation settings
+    # Note: Flash model (gemini-2.5-flash-image) doesn't support image_size parameter
+    # Only Pro model (gemini-3-pro-image-preview) supports 1K/2K/4K resolution
+    is_flash_model = (model_to_use == IMAGE_MODEL_FLASH)
+    
+    # When using Google Search grounding, we MUST include 'TEXT' in response_modalities
+    # because the model needs to output text to show grounding metadata and search results
+    if use_grounding:
+        if is_flash_model:
+            # Flash model with Google Search - no image_size support
+            config = types.GenerateContentConfig(
+                temperature=1,
+                response_modalities=['TEXT', 'IMAGE'],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                ),
+                tools=[{"google_search": {}}],
+            )
+        else:
+            # Pro model with Google Search
+            config = types.GenerateContentConfig(
+                temperature=1,
+                response_modalities=['TEXT', 'IMAGE'],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                    image_size=image_size,
+                ),
+                tools=[{"google_search": {}}],
+            )
+    else:
+        if is_flash_model:
+            # Flash model - no image_size support
+            config = types.GenerateContentConfig(
+                temperature=1,
+                response_modalities=['IMAGE'],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                ),
+            )
+        else:
+            # Pro model - full features
+            config = types.GenerateContentConfig(
+                temperature=1,
+                response_modalities=['IMAGE'],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                    image_size=image_size,
+                ),
+            )
+    
+    # Generate the new view based on the reference image
+    response = client.models.generate_content(
+        model=model_to_use,
+        contents=[edit_prompt, image_part],
+        config=config,
+    )
+    
+    # Extract the image from the response
+    for part in response.parts:
+        if part.inline_data is not None:
+            return GeneratedImage(
+                view=target_view,
+                image_data=part.inline_data.data,
+                prompt_used=edit_prompt,
+            )
+    
+    raise Exception("No image was generated. The API returned an empty response.")
+
+
 def regenerate_single_view(
     spec: "CharacterSpec",
     view: str,
@@ -476,9 +658,11 @@ def generate_tpose_images(
     """
     Generate T-pose images for all specified views using Gemini 3 Pro Image Preview.
     
-    This is the main function that orchestrates the image generation
-    for all three views (front, side, back) using the gemini-3-pro-image-preview
-    model (Nano Banana Pro).
+    This function uses a sequential approach to ensure consistency:
+    1. Generate front view from text prompt
+    2. Generate side and back views based on the front view image
+    
+    This ensures all views are consistent since they're based on the same front view.
     
     Args:
         spec: The character specification
@@ -506,30 +690,74 @@ def generate_tpose_images(
     
     print(f"  Using model: {IMAGE_MODEL}")
     print(f"  Resolution: {image_size}, Aspect ratio: {aspect_ratio}")
+    print(f"  Strategy: Sequential generation (front → side/back) for consistency")
     
-    for view in views:
-        print(f"  Generating {view} view...")
+    # Step 1: Generate front view first (this is the reference)
+    front_image: Optional[GeneratedImage] = None
+    
+    if "front" in views:
+        print(f"  Generating front view (reference)...")
         
-        # Build the prompt for this view
-        prompt = build_tpose_prompt(spec, view)
+        # Build the prompt for front view
+        front_prompt = build_tpose_prompt(spec, "front")
         
-        # Generate the image using Gemini 3 Pro Image Preview
-        image_data = generate_image_with_gemini(
-            prompt=prompt,
+        # Generate the front view image
+        front_image_data = generate_image_with_gemini(
+            prompt=front_prompt,
             api_key=api_key,
             aspect_ratio=aspect_ratio,
             image_size=image_size,
         )
         
         # Create the GeneratedImage object
-        generated_image = GeneratedImage(
-            view=view,
-            image_data=image_data,
-            prompt_used=prompt,
+        front_image = GeneratedImage(
+            view="front",
+            image_data=front_image_data,
+            prompt_used=front_prompt,
         )
         
-        generated_images.append(generated_image)
-        print(f"    ✓ {view} view generated")
+        generated_images.append(front_image)
+        print(f"    ✓ front view generated")
+    
+    # Step 2: Generate other views based on front view (if front was generated)
+    for view in views:
+        if view == "front":
+            continue  # Already generated above
+        
+        if view in ["side", "back"] and front_image is not None:
+            # Generate this view based on the front view for consistency
+            generated_image = generate_view_from_reference(
+                spec=spec,
+                reference_image_data=front_image.image_data,
+                target_view=view,
+                api_key=api_key,
+                aspect_ratio=aspect_ratio,
+                image_size=image_size,
+            )
+            
+            generated_images.append(generated_image)
+            print(f"    ✓ {view} view generated (based on front view)")
+        else:
+            # Fallback: Generate independently if front view not available
+            print(f"  Generating {view} view independently (no front reference)...")
+            
+            prompt = build_tpose_prompt(spec, view)
+            
+            image_data = generate_image_with_gemini(
+                prompt=prompt,
+                api_key=api_key,
+                aspect_ratio=aspect_ratio,
+                image_size=image_size,
+            )
+            
+            generated_image = GeneratedImage(
+                view=view,
+                image_data=image_data,
+                prompt_used=prompt,
+            )
+            
+            generated_images.append(generated_image)
+            print(f"    ✓ {view} view generated")
     
     return generated_images
 

@@ -1,22 +1,21 @@
 name: Aya
-role: nimble courier
-game_style: stylized cel-shaded adventure
-silhouette: slim athletic build with hooded coat and satchel
+role: Nimble courier
+game_style: stylized cel-shaded sci-fi
+silhouette: slim, mid-thigh coat, courier harness
 color_palette:
 - teal accents
 - magenta accents
 - amber accents
-- dark neutrals
+- neutral gray
 key_props:
-- courier satchel on right hip
-- parcel harness on torso
-- compact holster pouch on belt
+- parcel harness on back
+- wrist scanner on left forearm
+- small pouch on belt
 animation_focus:
 - run
-- ride
-- slide
+- sprint
+- skid
 - jump
 - deliver
-- idle
-extra_notes: Set in a rainy neon harbor night market, often seen mid-stride or on
-  a mag-bike with a focused but compassionate expression.
+- ride
+extra_notes: Set in a rainy neon harbor city, expression generally focused but warm.

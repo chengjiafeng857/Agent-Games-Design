@@ -1,0 +1,21 @@
+name: Street Vendors
+role: Market stall owners
+game_style: stylized cel-shaded crowds
+silhouette: varied human figures with aprons and stall canopies
+color_palette:
+- browns
+- teal accents
+- magenta signage
+- amber lanterns
+key_props:
+- apron pockets on waist
+- coin pouch on belt
+- towel looped on hip
+- order pad on belt
+animation_focus:
+- idle
+- talk
+- gesture
+- sell
+- wave
+extra_notes: Clustered under awnings and stalls in a dense night market environment.

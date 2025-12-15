@@ -47,9 +47,17 @@ class ViewImage:
             )
     
     def to_api_dict(self) -> dict:
-        """Convert to API parameter format."""
+        """Convert to API parameter format.
+        
+        Based on Tencent Hunyuan 3D API docs:
+        https://cloud.tencent.com/document/api/1804/123447
+        
+        ViewImage structure uses:
+        - View: left/right/back
+        - ImageUrl: URL of the image
+        """
         return {
-            "View": self.view,
+            "View": self.view,  # API uses View, not ViewType
             "ImageUrl": self.image_url,
         }
 

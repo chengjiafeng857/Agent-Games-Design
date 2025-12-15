@@ -1,0 +1,20 @@
+name: Dockers Union
+role: Harbor laborers
+game_style: stylized semi-realistic cel-shaded
+silhouette: broad-shouldered workers with jackets and hard hats
+color_palette:
+- navy
+- brown
+- gray
+- teal accents
+key_props:
+- tool belt at waist
+- radio clipped on shoulder strap
+- work gloves tucked on belt
+animation_focus:
+- walk
+- lift
+- idle
+- talk
+- gesture
+extra_notes: Typically seen near cranes and loading areas, with weary but sturdy posture.

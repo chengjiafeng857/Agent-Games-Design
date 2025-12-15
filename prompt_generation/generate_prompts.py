@@ -620,6 +620,13 @@ def generate_all_command(
             help="Skip confirmation before 3D generation (for automation)",
         ),
     ] = False,
+    use_all_views_cli: Annotated[
+        bool,
+        typer.Option(
+            "--use-all-views",
+            help="Use all 3 views (front/side/back) for 3D generation instead of just front",
+        ),
+    ] = False,
     provider_3d: Annotated[
         str,
         typer.Option(
@@ -658,6 +665,10 @@ def generate_all_command(
     \b
     Example (automated, no confirmation):
       uv run generate_prompts.py all -i configs/aethel.yaml --auto-3d
+    
+    \b
+    Example (automated with all 3 views for better 3D):
+      uv run generate_prompts.py all -i configs/aethel.yaml --auto-3d --use-all-views
     
     \b
     Example (skip 3D generation):
@@ -750,6 +761,7 @@ def generate_all_command(
     if not skip_3d:
         # Human-in-the-loop: Ask user to review images before 3D generation
         proceed_with_3d = True
+        use_all_views = use_all_views_cli  # Default from CLI option
         
         if front_image_path and front_image_path.exists() and not auto_3d:
             # Loop for regeneration options
@@ -775,22 +787,46 @@ def generate_all_command(
                 )
                 
                 if proceed_with_3d:
+                    # Ask user whether to use front view only or all 3 views
+                    print(f"\n{'='*60}")
+                    print("3D GENERATION MODE")
+                    print(f"{'='*60}")
+                    print("\nChoose how to generate the 3D model:\n")
+                    print("  [1] Front view only (faster, uses only the front image)")
+                    print("  [2] All 3 views (better quality, uses front + side + back)")
+                    print()
+                    
+                    mode_choice = typer.prompt(
+                        "Your choice",
+                        type=str,
+                        default="1",
+                    )
+                    
+                    use_all_views = (mode_choice == "2")
+                    
+                    if use_all_views:
+                        print("\n✓ Using all 3 views for 3D generation (front + side + back)")
+                    else:
+                        print("\n✓ Using front view only for 3D generation")
+                    
                     break  # User approved, proceed with 3D
                 
                 # User declined - offer regeneration options
                 print(f"\n{'='*60}")
                 print("REGENERATION OPTIONS")
                 print(f"{'='*60}")
-                print("\nThe front image will be used for 3D model generation.")
-                print("Choose how to proceed:\n")
+                print("\nChoose what to regenerate:\n")
                 print("  [1] Regenerate front image entirely (new generation)")
                 print("  [2] Modify front image with Gemini (edit with text prompt)")
-                print("  [3] Skip 3D generation (exit)")
+                print("  [3] Regenerate side view only (from current front)")
+                print("  [4] Regenerate back view only (from current front)")
+                print("  [5] Regenerate side + back views (from current front)")
+                print("  [6] Skip 3D generation (exit)")
                 
                 choice = typer.prompt(
                     "\nYour choice",
                     type=str,
-                    default="3",
+                    default="6",
                 )
                 
                 if choice == "1":
@@ -834,6 +870,8 @@ def generate_all_command(
                     
                 elif choice == "2":
                     # Modify front image with Gemini
+                    from src.stage4_image_generation import generate_view_from_reference
+                    
                     print(f"\n{'='*60}")
                     print("MODIFY FRONT IMAGE WITH GEMINI")
                     print(f"{'='*60}")
@@ -859,7 +897,7 @@ def generate_all_command(
                         continue
                     
                     try:
-                        print(f"\n  Editing image with prompt: '{edit_prompt}'")
+                        print(f"\n  Editing front image with prompt: '{edit_prompt}'")
                         print(f"  Using model: gemini-3-pro-image-preview (Nano Banana Pro)")
                         
                         edited_data = edit_image_with_gemini(
@@ -880,16 +918,103 @@ def generate_all_command(
                         if 'saved_image_paths' in dir() and saved_image_paths:
                             saved_image_paths.append(edited_path)
                         
-                        print(f"\n✓ Edited image saved: {edited_path.name}")
-                        print("  Please review the edited image.")
+                        print(f"\n✓ Edited front image saved: {edited_path.name}")
+                        
+                        # Auto-regenerate side and back views from the edited front
+                        print(f"\n  Regenerating side and back views from edited front...")
+                        
+                        for view in ["side", "back"]:
+                            new_image = generate_view_from_reference(
+                                spec=spec,
+                                reference_image_data=edited_data,
+                                target_view=view,
+                                api_key=gemini_key,
+                            )
+                            
+                            # Save the new image
+                            new_path = images_dir / new_image.get_filename(spec.name, version)
+                            new_path.write_bytes(new_image.image_data)
+                            
+                            # Update saved_image_paths
+                            if 'saved_image_paths' in dir() and saved_image_paths:
+                                replaced = False
+                                for i, p in enumerate(saved_image_paths):
+                                    if view in p.name.lower() and "edited" not in p.name.lower():
+                                        saved_image_paths[i] = new_path
+                                        replaced = True
+                                        break
+                                if not replaced:
+                                    saved_image_paths.append(new_path)
+                            
+                            print(f"    ✓ {view} view regenerated: {new_path.name}")
+                        
+                        print("\n  Please review the edited images.")
                         
                     except Exception as e:
-                        print(f"\nError editing image: {e}")
+                        print(f"\nError editing/regenerating images: {e}")
+                    
+                    continue  # Loop back to show the review screen
+                
+                elif choice in ("3", "4", "5"):
+                    # Regenerate side/back views from front
+                    from src.stage4_image_generation import generate_view_from_reference
+                    
+                    views_to_regen = []
+                    if choice == "3":
+                        views_to_regen = ["side"]
+                    elif choice == "4":
+                        views_to_regen = ["back"]
+                    else:  # choice == "5"
+                        views_to_regen = ["side", "back"]
+                    
+                    print(f"\n{'='*60}")
+                    print(f"REGENERATING {', '.join(v.upper() for v in views_to_regen)} VIEW(S)")
+                    print(f"{'='*60}")
+                    
+                    gemini_key = os.environ.get(GEMINI_API_KEY_ENV)
+                    if not gemini_key:
+                        print(f"\nError: {GEMINI_API_KEY_ENV} not set.")
+                        continue
+                    
+                    # Read front image data for reference
+                    front_image_data = front_image_path.read_bytes()
+                    
+                    try:
+                        for view in views_to_regen:
+                            new_image = generate_view_from_reference(
+                                spec=spec,
+                                reference_image_data=front_image_data,
+                                target_view=view,
+                                api_key=gemini_key,
+                            )
+                            
+                            # Save the new image
+                            new_path = images_dir / new_image.get_filename(spec.name, version)
+                            new_path.write_bytes(new_image.image_data)
+                            
+                            # Update saved_image_paths
+                            if 'saved_image_paths' in dir() and saved_image_paths:
+                                # Replace existing or append
+                                replaced = False
+                                for i, p in enumerate(saved_image_paths):
+                                    if view in p.name.lower():
+                                        saved_image_paths[i] = new_path
+                                        replaced = True
+                                        break
+                                if not replaced:
+                                    saved_image_paths.append(new_path)
+                            
+                            print(f"\n✓ New {view} view saved: {new_path.name}")
+                        
+                        print("\n  Please review the regenerated image(s).")
+                        
+                    except Exception as e:
+                        print(f"\nError regenerating view(s): {e}")
                     
                     continue  # Loop back to show the review screen
                     
                 else:
-                    # Skip 3D generation
+                    # Skip 3D generation (choice 6 or any other)
                     proceed_with_3d = False
                     print("\n(3D generation skipped by user)")
                     print(f"\nYou can generate the 3D model later with:")
@@ -922,17 +1047,60 @@ def generate_all_command(
                     try:
                         print(f"Using front image: {front_image_path}")
                         
+                        # Find side and back views if using all views
+                        side_image_path: Optional[Path] = None
+                        back_image_path: Optional[Path] = None
+                        
+                        if use_all_views and 'saved_image_paths' in dir() and saved_image_paths:
+                            for img_path in saved_image_paths:
+                                img_name_lower = img_path.name.lower()
+                                if "side" in img_name_lower:
+                                    side_image_path = img_path
+                                elif "back" in img_name_lower:
+                                    back_image_path = img_path
+                            
+                            if side_image_path:
+                                print(f"Using side image: {side_image_path}")
+                            else:
+                                print("Note: Side view image not found")
+                            
+                            if back_image_path:
+                                print(f"Using back image: {back_image_path}")
+                            else:
+                                print("Note: Back view image not found")
+                        
                         # Create output directory for 3D model
                         hunyuan3d_dir = run_output_dir / "hunyuan3d"
                         hunyuan3d_dir.mkdir(parents=True, exist_ok=True)
                         
-                        result = generate_3d_model(
-                            image=front_image_path,
-                            output_dir=hunyuan3d_dir,
-                            timeout=timeout_3d,
-                            verbose=True,
-                            provider_type=actual_provider,
-                        )
+                        # Build kwargs for 3D generation
+                        gen_kwargs = {
+                            "image": front_image_path,
+                            "output_dir": hunyuan3d_dir,
+                            "timeout": timeout_3d,
+                            "verbose": True,
+                            "provider_type": actual_provider,
+                        }
+                        
+                        # Add multi-view images if using all views
+                        # Note: Hunyuan uses left_view for side view (profile facing left)
+                        multi_view_kwargs = {}
+                        if use_all_views:
+                            if side_image_path and side_image_path.exists():
+                                multi_view_kwargs["left_view"] = side_image_path
+                            if back_image_path and back_image_path.exists():
+                                multi_view_kwargs["back_view"] = back_image_path
+                        
+                        # Try with multi-view first, fall back to front-only if it fails
+                        try:
+                            result = generate_3d_model(**gen_kwargs, **multi_view_kwargs)
+                        except Exception as multi_view_error:
+                            if multi_view_kwargs and "InvalidParameter" in str(multi_view_error):
+                                print(f"\nWarning: Multi-view failed (API may not support it yet)")
+                                print("  Retrying with front view only...")
+                                result = generate_3d_model(**gen_kwargs)
+                            else:
+                                raise
                         
                         if result.status == "DONE" and result.obj_path:
                             print(f"\n3D Model generated successfully!")

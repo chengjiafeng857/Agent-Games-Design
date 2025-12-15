@@ -1,6 +1,6 @@
 # AI Character Prompt Generator
 
-A clean, robust Python CLI tool that generates 3D model for Game character**.
+A clean, robust Python CLI tool that generates 3D models for game characters.
 
 ## Pipeline Overview
 
@@ -15,10 +15,21 @@ A clean, robust Python CLI tool that generates 3D model for Game character**.
 │                                                               (Stage 5)     │
 │                                                                              │
 │   Stage 2: Uses OpenAI GPT-5 (with web search tool) to refine prompts       │
-│   Stage 4: Generates T-pose images (front/side/back) via Gemini API         │
+│   Stage 4: Generates CONSISTENT T-pose images (front → side/back)           │
+│             Front view generated first, then side/back from front reference │
 │   Stage 5: Converts images/prompts to 3D models via Hunyuan API → .obj      │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## ✨ New: Consistent Multi-View Generation
+
+The image generation pipeline now ensures **consistency across all views**:
+
+- **Front view** is generated first from text prompt (reference image)
+- **Side & back views** are generated from the front view using Gemini's image editing
+- This ensures all views show the **same character** with consistent features, proportions, and style
+
+See [CONSISTENT_VIEWS.md](CONSISTENT_VIEWS.md) for details.
 
 ## Quick Start
 
@@ -30,7 +41,7 @@ uv sync
 cp .env.example .env
 # Edit .env and add your API keys
 
-#run it all
+#run it all with refinement
 uv run generate_prompts.py all -i configs/aethel.yaml
 
 # Generate static prompts (Stages 1, 2a, 3) - no API key needed
@@ -209,9 +220,7 @@ output/
 │   │   └── aethel_tpose_prompt_v1.txt
 │   ├── refined/                      # Stage 2b: LLM-refined prompts (OpenAI)
 │   │   ├── aethel_refined_concept_v1.txt
-│   │   ├── aethel_refined_tpose_front_v1.txt
-│   │   ├── aethel_refined_tpose_side_v1.txt
-│   │   └── aethel_refined_tpose_back_v1.txt
+│   │   └── aethel_refined_tpose_front_v1.txt
 │   ├── common/                       # Stage 3: Checklist & notes
 │   │   ├── aethel_2d_refinement_criteria_v1.txt
 │   │   └── aethel_design_notes_v1.txt
@@ -420,10 +429,8 @@ The LLM generates:
 
 1. `refined_concept` - Optimized concept art prompt
 2. `refined_tpose_front` - Front view T-pose prompt
-3. `refined_tpose_side` - Side view T-pose prompt  
-4. `refined_tpose_back` - Back view T-pose prompt
 
-These refined prompts are ready to use directly in image generators!
+Note: Only the front view prompt is generated. Side and back views are generated from the front view reference image in Stage 4 for consistency.
 
 ### Stage 3: Checklist & Notes
 

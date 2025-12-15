@@ -95,7 +95,11 @@ uv run agent-games chat
 
 # Run ReAct workflow with a prompt file (Recommended for long GDDs)
 uv run agent-games react --file my_game_idea.txt --interactive
+
+# Run workflow to generate character spec yaml file
+uv run agent-games generate-config my_character.txt -o configs/my_character.yaml
 ```
+
 
 ### Running Examples
 

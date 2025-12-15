@@ -38,10 +38,10 @@ PROMPT_FILE_MAP: dict[str, tuple[str, str]] = {
     
     # Stage 2b: LLM-refined prompts (from OpenAI) -> refined/
     # These are the actual prompts to use for image generation!
+    # Note: Only front view prompt is generated. Side/back views are
+    # generated from front view reference image in Stage 4 for consistency.
     "refined_concept": ("refined", "{name}_refined_concept_{version}.txt"),
     "refined_tpose_front": ("refined", "{name}_refined_tpose_front_{version}.txt"),
-    "refined_tpose_side": ("refined", "{name}_refined_tpose_side_{version}.txt"),
-    "refined_tpose_back": ("refined", "{name}_refined_tpose_back_{version}.txt"),
     
     # Stage 3: Common documents -> common/
     "common_2d_refinement_criteria": ("common", "{name}_2d_refinement_criteria_{version}.txt"),

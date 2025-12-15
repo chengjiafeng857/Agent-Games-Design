@@ -30,6 +30,7 @@ from .stage2_llm_refiner import (
 from .stage3_common_prompts import generate_common_prompts
 from .stage4_image_generation import (
     generate_tpose_images,
+    generate_view_from_reference,
     generate_image_prompts_only,
     save_generated_images,
     GEMINI_API_KEY_ENV,
@@ -54,6 +55,7 @@ __all__ = [
     "generate_common_prompts",
     # Stage 4: Image generation
     "generate_tpose_images",
+    "generate_view_from_reference",
     "generate_image_prompts_only",
     "save_generated_images",
     # File utilities

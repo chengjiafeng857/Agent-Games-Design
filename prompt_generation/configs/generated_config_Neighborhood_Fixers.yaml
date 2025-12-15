@@ -1,0 +1,20 @@
+name: Neighborhood Fixers
+role: Information brokers
+game_style: stylized noir cel-shaded
+silhouette: slim figures with long coats and hoods
+color_palette:
+- dark gray
+- black
+- teal trim
+- magenta trim
+key_props:
+- data slate on belt
+- comms earpiece on headband
+- keyring on hip
+animation_focus:
+- idle
+- talk
+- gesture
+- handoff
+- type
+extra_notes: Often positioned near kiosks or shadowed corners, reserved body language.

@@ -1,0 +1,20 @@
+name: Rook
+role: Neighborhood fixer
+game_style: stylized noir cel-shaded
+silhouette: tall with long coat and tilted hood or cap
+color_palette:
+- dark gray
+- black
+- teal accents
+- magenta accents
+key_props:
+- data tablet on left hip
+- small holster pouch on belt
+- encrypted comms device on chest strap
+animation_focus:
+- idle
+- talk
+- gesture
+- handoff
+- lean
+extra_notes: Calm, calculating presence who manages job boards and rumor-heavy work.

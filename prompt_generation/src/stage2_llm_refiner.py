@@ -82,18 +82,17 @@ class RefinedPrompts:
     These prompts are ready to use directly in image generators
     (Midjourney, DALL-E, Stable Diffusion, Gemini, etc.)
     
+    Note: Only front view prompt is generated. Side and back views are
+    generated from the front view reference image in Stage 4 for consistency.
+    
     Attributes:
         concept_prompt: Refined full-body concept art prompt
         tpose_front: T-pose front view prompt (for 3D reference)
-        tpose_side: T-pose side view prompt
-        tpose_back: T-pose back view prompt
         model_used: Which LLM model was used
         web_search_used: Whether web search was enabled
     """
     concept_prompt: str
     tpose_front: str
-    tpose_side: str
-    tpose_back: str
     model_used: str
     web_search_used: bool
 
@@ -459,25 +458,23 @@ def refine_prompts_with_llm(
         use_web_search=use_web_search,
     )
     
-    # Generate T-pose prompts for each view
-    tpose_prompts = {}
-    for view in ["front", "side", "back"]:
-        print(f"  Generating {view} T-pose prompt...")
-        tpose_request = build_tpose_request(spec, view)
-        tpose_prompts[view] = call_openai(
-            user_message=tpose_request,
-            api_key=api_key,
-            model=model,
-            use_web_search=use_web_search,
-        )
+    # Generate T-pose front view prompt only
+    # Note: Side and back views are generated from front view reference image
+    # in Stage 4 for consistency (image-based, not text prompt-based)
+    print("  Generating front T-pose prompt...")
+    tpose_front_request = build_tpose_request(spec, "front")
+    tpose_front = call_openai(
+        user_message=tpose_front_request,
+        api_key=api_key,
+        model=model,
+        use_web_search=use_web_search,
+    )
     
-    print("  ✓ All prompts refined")
+    print("  ✓ Prompts refined (front view only, side/back generated from reference)")
     
     return RefinedPrompts(
         concept_prompt=concept_prompt,
-        tpose_front=tpose_prompts["front"],
-        tpose_side=tpose_prompts["side"],
-        tpose_back=tpose_prompts["back"],
+        tpose_front=tpose_front,
         model_used=model,
         web_search_used=use_web_search,
     )
@@ -495,6 +492,9 @@ def refine_prompts_to_dict(
 ) -> dict[str, str]:
     """
     Refine prompts and return as a dictionary (for saving to files).
+    
+    Note: Only front view prompt is generated. Side and back views are
+    generated from the front view reference image in Stage 4 for consistency.
     
     Args:
         spec: The character specification
@@ -515,8 +515,6 @@ def refine_prompts_to_dict(
     return {
         "refined_concept": refined.concept_prompt,
         "refined_tpose_front": refined.tpose_front,
-        "refined_tpose_side": refined.tpose_side,
-        "refined_tpose_back": refined.tpose_back,
     }
 
 
@@ -531,6 +529,9 @@ def preview_llm_requests(spec: CharacterSpec) -> dict[str, str]:
     Useful for testing without making API calls.
     Shows what prompts would be refined.
     
+    Note: Only front view request is included. Side and back views are
+    generated from the front view reference image in Stage 4 for consistency.
+    
     Args:
         spec: The character specification
         
@@ -540,7 +541,5 @@ def preview_llm_requests(spec: CharacterSpec) -> dict[str, str]:
     return {
         "concept_request": build_concept_request(spec),
         "tpose_front_request": build_tpose_request(spec, "front"),
-        "tpose_side_request": build_tpose_request(spec, "side"),
-        "tpose_back_request": build_tpose_request(spec, "back"),
     }
 

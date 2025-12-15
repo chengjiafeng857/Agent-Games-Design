@@ -1,0 +1,19 @@
+name: Mei
+role: Street vendor contact
+game_style: stylized cel-shaded
+silhouette: medium build with apron and stall counter outline
+color_palette:
+- warm brown
+- amber accents
+- teal signage
+key_props:
+- order tablet on belt
+- towel looped at waist
+- coin pouch on hip
+animation_focus:
+- idle
+- talk
+- serve
+- wave
+- lean
+extra_notes: Serves as an early friendly anchor NPC at a lantern or noodle stall.
